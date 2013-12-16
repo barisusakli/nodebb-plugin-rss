@@ -4,6 +4,7 @@ var fs = require('fs'),
 	path = require('path'),
 	async = require('async'),
 	cron = require('cron').CronJob,
+	db = module.parent.require('./database'),
 	templates = module.parent.require('./../public/src/templates'),
 	meta = module.parent.require('./meta');
 
@@ -34,29 +35,43 @@ var fs = require('fs'),
 	};
 
 
+	admin.getFeeds = function(callback) {
+		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feeds) {
+			if(err) {
+				return callback(err);
+			}
+			console.log('these are the feeds', feeds);
+			callback(null, feeds);
+		});
+	}
+
 	admin.route = function(custom_routes, callback) {
 		fs.readFile(path.join(__dirname, 'public/templates/admin.tpl'), function(err, tpl) {
 //console.log(tpl.toString());
-			var newTpl = templates.prepare(tpl).parse([]);
-console.log('OPPA', newTpl);
 
-			custom_routes.routes.push({
-				route: '/plugins/rss',
-				method: "get",
-				options: function(req, res, callback) {
-					callback({
-						req: req,
-						res: res,
-						route: '/plugins/rss',
-						name: 'Rss',
-						content: tpl
-					});
-				}
+			admin.getFeeds(function(feeds) {
+				var newTpl = templates.prepare(tpl.toString()).parse({feeds:feeds});
+				console.log('OPPA', newTpl);
+
+				custom_routes.routes.push({
+					route: '/plugins/rss',
+					method: "get",
+					options: function(req, res, callback) {
+						callback({
+							req: req,
+							res: res,
+							route: '/plugins/rss',
+							name: 'Rss',
+							content: tpl
+						});
+					}
+				});
+
+
+
+				callback(null, custom_routes);
 			});
 
-
-
-			callback(null, custom_routes);
 		});
 	};
 
