@@ -1,0 +1,17 @@
+{
+    "id": "nodebb-plugin-rss",
+    "name": "RSS Feed",
+    "description": "A RSS parser for NodeBB",
+    "url": "https://github.com/barisusakli/nodebb-plugin-rsss",
+    "library": "./index.js",
+    "staticDir": "./public",
+    "css": [
+            "css/default.css"
+    ],
+    "hooks": [
+        { "hook": "filter:admin.header.build", "method": "admin.menu", "callbacked": false },
+        { "hook": "filter:admin.create_routes", "method": "admin.route", "callbacked": true },
+        { "hook": "action:plugin.activate", "method": "admin.activate" },
+        { "hook": "action:config.set", "method": "reload" }
+    ]
+}

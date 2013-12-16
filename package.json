@@ -1,0 +1,19 @@
+{
+  "name": "nodebb-plugin-rss",
+  "version": "0.0.1",
+  "description": "A RSS Plugin to pull feeds and post them in to categories",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "nodebb",
+    "plugin",
+    "rss"
+  ],
+  "author": "Baris Usakli <baris@designcreateplay.com>",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "cron": "~1.0.1"
+  }
+}
