@@ -3,23 +3,67 @@
 var fs = require('fs'),
 	path = require('path'),
 	async = require('async'),
+	request = require('request'),
 	cron = require('cron').CronJob,
+	topics = module.parent.require('./topics'),
 	db = module.parent.require('./database'),
 	templates = module.parent.require('./../public/src/templates'),
 	meta = module.parent.require('./meta');
 
 (function(module) {
 
-	//24 hours
-	//new cron('0 0 * * *', Notifications.prune, null, true);
-	module.pullFeeds = function(cutoff) {
-		console.log('cron run : ', cutoff);
+
+	function pullFeeds() {
+		console.log('cron run : ');
+		admin.getFeeds(function(err, feeds) {
+			var returnData = [];
+			function get(feed, next) {
+				getFeedByGoogle(feed.url, function(err, entries) {
+
+					for(var i=0; i<entries.length; ++i) {
+						topics.post(1, entries[i].title, entries[i].content, feed.category, function(err, result) {
+
+						});
+					}
+
+					next(err);
+				});
+			}
+
+			async.each(feeds, get, function(err) {
+				console.log('done posting feeds');
+			});
+		});
 	};
 
 
+	function getFeedByGoogle(feedUrl, callback) {
+		request('http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=1&q=' + encodeURIComponent(feedUrl), function (err, response, body) {
+
+			if (!err && response.statusCode == 200) {
+
+				var p = JSON.parse(body);
+
+				var entryData = p.responseData.feed.entries[0];
+				var entry = {
+					title: entryData.title,
+					content: entryData.content,
+					author: entryData.author,
+					publishedDate: entryData.publishedDate,
+					link: entryData.link
+				}
+				callback(null, [entry]);
+			} else {
+				callback(err);
+			}
+		});
+	}
+
+	//24 hours
+	//new cron('0 0 * * *', pullFeeds, null, true);
 	//every minute
 	console.log('starting cron');
-	new cron('* * * * *', module.pullFeeds, null, true);
+	new cron('* * * * *', pullFeeds, null, true);
 
 
 	var admin = {};
