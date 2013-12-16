@@ -40,34 +40,62 @@ var fs = require('fs'),
 			if(err) {
 				return callback(err);
 			}
-			console.log('these are the feeds', feeds);
-			callback(null, feeds);
+
+			function getFeed(key, next) {
+				db.getObject(key, next);
+			}
+
+			async.each(feeds, getFeed, function(err, results) {
+				if(err) {
+					return callback(err);
+				}
+				if(results) {
+					console.log(results);
+					callback(null, results);
+				} else {
+					callback(null, []);
+				}
+			});
 		});
 	}
 
 	admin.route = function(custom_routes, callback) {
 		fs.readFile(path.join(__dirname, 'public/templates/admin.tpl'), function(err, tpl) {
-//console.log(tpl.toString());
 
-			admin.getFeeds(function(feeds) {
+			admin.getFeeds(function(err, feeds) {
+				if(err) {
+					return callback();
+				}
 				var newTpl = templates.prepare(tpl.toString()).parse({feeds:feeds});
 				console.log('OPPA', newTpl);
 
 				custom_routes.routes.push({
 					route: '/plugins/rss',
-					method: "get",
+					method: 'get',
 					options: function(req, res, callback) {
 						callback({
 							req: req,
 							res: res,
 							route: '/plugins/rss',
 							name: 'Rss',
-							content: tpl
+							content: newTpl
 						});
 					}
 				});
 
-
+				custom_routes.api.push({
+					route: '/plugins/rss/save',
+					method: 'post',
+					options: function(req, res, callback) {
+						callback({
+							req: req,
+							res: res,
+							route: '/plugins/rss',
+							name: 'Rss',
+							content: newTpl
+						});
+					}
+				});
 
 				callback(null, custom_routes);
 			});
