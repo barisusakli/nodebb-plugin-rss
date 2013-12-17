@@ -1,7 +1,5 @@
 <h1>RSS</h1>
 
-<h3>Parser Options</h3>
-
 
 <div id="feed-template" class="row hide">
 	<div class="col-sm-4 col-xs-12">
@@ -25,6 +23,7 @@
 				<option value="60">1 Hour</option>
 				<option value="720">12 Hours</option>
 				<option value="1440">24 Hours</option>
+				<option value="1">1 Minute</option>
 			</select>
 		</div>
 	</div>
@@ -60,6 +59,7 @@
 					<option value="60">1 Hour</option>
 					<option value="720">12 Hours</option>
 					<option value="1440">24 Hours</option>
+					<option value="1">1 Minute</option>
 				</select>
 			</div>
 		</div>
@@ -82,7 +82,6 @@
 		var categories = null;
 
 		function addOptionsToAllSelects() {
-			console.log($('.form-control.categories').length);
 			$('.form-control.feed-category').each(function(index, element) {
 				addOptionsToSelect($(element));
 			});
@@ -137,13 +136,14 @@
 				if(feed.url) {
 					feedsToSave.push(feed);
 				}
-				return false;
+
 			});
 
 
 			$.post('/api/admin/plugins/rss/save', {_csrf : $('#csrf_token').val(), feeds : feedsToSave}, function(data) {
-				console.log(data);
+
 			});
+			return false;
 
 		});
 

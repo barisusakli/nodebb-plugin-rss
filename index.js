@@ -13,28 +13,51 @@ var fs = require('fs'),
 (function(module) {
 
 
-	function pullFeeds() {
-		console.log('cron run : ');
-		admin.getFeeds(function(err, feeds) {
-			var returnData = [];
-			function get(feed, next) {
-				getFeedByGoogle(feed.url, function(err, entries) {
+	function pullFeeds(feeds) {
 
-					for(var i=0; i<entries.length; ++i) {
-						topics.post(1, entries[i].title, entries[i].content, feed.category, function(err, result) {
+		function get(feed, next) {
 
-						});
-					}
-
-					next(err);
-				});
+			if(!feed.lastEntryDate) {
+				feed.lastEntryDate = 0;
 			}
 
-			async.each(feeds, get, function(err) {
-				console.log('done posting feeds');
+			getFeedByGoogle(feed.url, function(err, entries) {
+
+				if(!entries || !entries.length) {
+					return next();
+				}
+				var lastEntryDate = new Date(entries[0].publishedDate).getTime();
+				if(parseInt(feed.lastEntryDate, 10) >= lastEntryDate) {
+					return next();
+				}
+
+				db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', lastEntryDate);
+
+				for(var i=0; i<entries.length; ++i) {
+
+					topics.post(1, entries[i].title, entries[i].content, feed.category, function(err, result) {
+
+					});
+				}
+
+				next(err);
 			});
+		}
+
+		async.each(feeds, get, function(err) {
+
 		});
 	};
+
+	function pullFeedsInterval(interval) {
+		admin.getFeeds(function(err, feeds) {
+			feeds = feeds.filter(function(item) {
+				return parseInt(item.interval, 10) === interval;
+			});
+
+			pullFeeds(feeds);
+		});
+	}
 
 
 	function getFeedByGoogle(feedUrl, callback) {
@@ -44,26 +67,18 @@ var fs = require('fs'),
 
 				var p = JSON.parse(body);
 
-				var entryData = p.responseData.feed.entries[0];
-				var entry = {
-					title: entryData.title,
-					content: entryData.content,
-					author: entryData.author,
-					publishedDate: entryData.publishedDate,
-					link: entryData.link
-				}
-				callback(null, [entry]);
+				callback(null, p.responseData.feed.entries);
 			} else {
 				callback(err);
 			}
 		});
 	}
 
-	//24 hours
-	//new cron('0 0 * * *', pullFeeds, null, true);
-	//every minute
-	console.log('starting cron');
-	new cron('* * * * *', pullFeeds, null, true);
+
+	new cron('* * * * *', function() { pullFeedsInterval(1); }, null, true);
+	new cron('0 * * * *', function() { pullFeedsInterval(60); }, null, true);
+	new cron('0 0/12 * * *', function() { pullFeedsInterval(60 * 12); }, null, true);
+	new cron('0 0 * * *', function() { pullFeedsInterval(60 * 24); }, null, true)
 
 
 	var admin = {};
@@ -80,17 +95,18 @@ var fs = require('fs'),
 
 
 	admin.getFeeds = function(callback) {
-		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feeds) {
-			console.log(feeds);
+		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feedUrls) {
+
 			if(err) {
 				return callback(err);
 			}
 
-			function getFeed(key, next) {
-				db.getObject('nodebb-plugin-rss:feed:' + key, next);
+			function getFeed(feedUrl, next) {
+				db.getObject('nodebb-plugin-rss:feed:' + feedUrl, next);
 			}
 
-			async.map(feeds, getFeed, function(err, results) {
+			async.map(feedUrls, getFeed, function(err, results) {
+
 				if(err) {
 					return callback(err);
 				}
@@ -151,7 +167,7 @@ var fs = require('fs'),
 				options: function(req, res, callback) {
 
 					admin.getFeeds(function(err, feeds) {
-						console.log('returning ', feeds);
+
 						if(err) {
 							return callback();
 						}
@@ -173,7 +189,7 @@ var fs = require('fs'),
 				route: '/plugins/rss/save',
 				method: 'post',
 				callback: function(req, res, callback) {
-					console.log('BESSSST', req.body.feeds);
+
 					if(!req.body.feeds) {
 						return callback({message:'no-feeds-to-save'});
 					}
@@ -183,7 +199,6 @@ var fs = require('fs'),
 							return res.json(500, {message: err.message});
 						}
 
-						console.log('OPPA', req.body.feeds);
 						saveFeeds(req.body.feeds, function(err) {
 							if(err) {
 								return res.json(500, {message: err.message});
