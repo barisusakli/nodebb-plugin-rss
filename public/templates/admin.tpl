@@ -8,7 +8,7 @@
 			<input type="text" class="form-control feed-url" placeholder="Enter the RSS feed URL">
 		</div>
 	</div>
-	<div class="col-sm-4 col-xs-12">
+	<div class="col-sm-2 col-xs-12">
 		<div class="form-group">
 			<label>Category</label>
 			<select class="form-control feed-category">
@@ -16,6 +16,13 @@
 			</select>
 		</div>
 	</div>
+	<div class="col-sm-2 col-xs-12">
+		<div class="form-group">
+			<label>User</label>
+			<input type="text" class="form-control feed-user" placeholder="User to post as">
+		</div>
+	</div>
+
 	<div class="col-sm-2 col-xs-12">
 		<div class="form-group">
 			<label>Interval</label>
@@ -33,6 +40,8 @@
 			<button class="form-control remove">Remove</button>
 		</div>
 	</div>
+
+	<input type="hidden" class="form-control feed-lastEntryDate" value="0">
 </div>
 
 <form class="form feeds">
@@ -44,12 +53,18 @@
 				<input type="text" class="form-control feed-url" placeholder="Enter the RSS feed URL" value="{feeds.url}">
 			</div>
 		</div>
-		<div class="col-sm-4 col-xs-12">
+		<div class="col-sm-2 col-xs-12">
 			<div class="form-group">
 				<label>Category</label>
 				<select class="form-control feed-category" data-category="{feeds.category}">
 
 				</select>
+			</div>
+		</div>
+		<div class="col-sm-2 col-xs-12">
+			<div class="form-group">
+				<label>User</label>
+				<input type="text" class="form-control feed-user" placeholder="User to post as" value="{feeds.username}">
 			</div>
 		</div>
 		<div class="col-sm-2 col-xs-12">
@@ -69,6 +84,8 @@
 				<button class="form-control remove">Remove</button>
 			</div>
 		</div>
+
+		<input type="hidden" class="form-control feed-lastEntryDate" value="{feeds.lastEntryDate}">
 	</div>
 <!-- END feeds -->
 </form>
@@ -130,7 +147,9 @@
 				var feed = {
 					url : child.find('.feed-url').val(),
 					category : child.find('.feed-category').val(),
-					interval : child.find('.feed-interval').val()
+					interval : child.find('.feed-interval').val(),
+					username: child.find('.feed-user').val(),
+					lastEntryDate: child.find('.feed-lastEntryDate').val(),
 				};
 
 				if(feed.url) {
@@ -139,12 +158,26 @@
 
 			});
 
-
 			$.post('/api/admin/plugins/rss/save', {_csrf : $('#csrf_token').val(), feeds : feedsToSave}, function(data) {
-
+				app.alert({
+					title: 'Success',
+					message: data.message,
+					type: 'success',
+					timeout: 2000
+				});
 			});
 			return false;
 
+		});
+
+		$('.feed-user').autocomplete({
+			source: function(request, response) {
+				socket.emit('api:admin.user.search', request.term, function(err, results) {
+					results = results.map(function(user) { return user.username });
+					response(results);
+					$('.ui-autocomplete a').attr('href', '#');
+				});
+			}
 		});
 
 	});

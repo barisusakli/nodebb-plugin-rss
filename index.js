@@ -7,47 +7,32 @@ var fs = require('fs'),
 	cron = require('cron').CronJob,
 	topics = module.parent.require('./topics'),
 	db = module.parent.require('./database'),
+	user = module.parent.require('./user'),
+	plugins = module.parent.require('./plugins'),
 	templates = module.parent.require('./../public/src/templates'),
 	meta = module.parent.require('./meta');
 
 (function(module) {
 
+	var cronJobs = [];
 
-	function pullFeeds(feeds) {
+	cronJobs.push(new cron('* * * * *', function() { pullFeedsInterval(1); }, null, false));
+	cronJobs.push(new cron('0 * * * *', function() { pullFeedsInterval(60); }, null, false));
+	cronJobs.push(new cron('0 0/12 * * *', function() { pullFeedsInterval(60 * 12); }, null, false));
+	cronJobs.push(new cron('0 0 * * *', function() { pullFeedsInterval(60 * 24); }, null, false));
 
-		function get(feed, next) {
-
-			if(!feed.lastEntryDate) {
-				feed.lastEntryDate = 0;
-			}
-
-			getFeedByGoogle(feed.url, function(err, entries) {
-
-				if(!entries || !entries.length) {
-					return next();
-				}
-				var lastEntryDate = new Date(entries[0].publishedDate).getTime();
-				if(parseInt(feed.lastEntryDate, 10) >= lastEntryDate) {
-					return next();
-				}
-
-				db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', lastEntryDate);
-
-				for(var i=0; i<entries.length; ++i) {
-
-					topics.post(1, entries[i].title, entries[i].content, feed.category, function(err, result) {
-
-					});
-				}
-
-				next(err);
-			});
-		}
-
-		async.each(feeds, get, function(err) {
-
+	function reStartCronJobs() {
+		stopCronJobs();
+		cronJobs.forEach(function(job) {
+			job.start();
 		});
-	};
+	}
+
+	function stopCronJobs() {
+		cronJobs.forEach(function(job) {
+			job.stop();
+		});
+	}
 
 	function pullFeedsInterval(interval) {
 		admin.getFeeds(function(err, feeds) {
@@ -59,9 +44,73 @@ var fs = require('fs'),
 		});
 	}
 
+	plugins.isActive('nodebb-plugin-rss', function(err, active) {
+		if(active) {
+			reStartCronJobs();
+		}
+	});
+
+	function pullFeeds(feeds) {
+
+		function get(feed, next) {
+
+			if(!feed.lastEntryDate) {
+				feed.lastEntryDate = 0;
+			}
+
+			getFeedByGoogle(feed.url, function(err, entries) {
+				if(err) {
+					return next(err);
+				}
+
+				if(!entries || !entries.length) {
+					return next();
+				}
+
+				var lastEntryDate = feed.lastEntryDate;
+				var mostRecent = new Date(entries[0].publishedDate).getTime();
+
+				function postEntry(entry, callback) {
+					user.getUidByUsername(feed.username, function(err, uid) {
+						if(err) {
+							return next(err);
+						}
+
+						if(!uid) {
+							uid = 1;
+						}
+
+						topics.post(uid, entry.title, entry.content, feed.category, function(err, result) {
+
+						});
+					});
+				}
+
+				for(var i=0; i<entries.length; ++i) {
+					entryDate = new Date(entries[i].publishedDate).getTime();
+					if(entryDate > lastEntryDate) {
+						if(entryDate > mostRecent) {
+							mostRecent = entryDate;
+						}
+						postEntry(entries[i], next);
+					}
+				}
+
+
+				db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent);
+
+				next(err);
+			});
+		}
+
+
+		async.each(feeds, get, function(err) {
+
+		});
+	};
 
 	function getFeedByGoogle(feedUrl, callback) {
-		request('http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=1&q=' + encodeURIComponent(feedUrl), function (err, response, body) {
+		request('http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=4&q=' + encodeURIComponent(feedUrl), function (err, response, body) {
 
 			if (!err && response.statusCode == 200) {
 
@@ -73,13 +122,6 @@ var fs = require('fs'),
 			}
 		});
 	}
-
-
-	new cron('* * * * *', function() { pullFeedsInterval(1); }, null, true);
-	new cron('0 * * * *', function() { pullFeedsInterval(60); }, null, true);
-	new cron('0 0/12 * * *', function() { pullFeedsInterval(60 * 12); }, null, true);
-	new cron('0 0 * * *', function() { pullFeedsInterval(60 * 24); }, null, true)
-
 
 	var admin = {};
 
@@ -203,7 +245,7 @@ var fs = require('fs'),
 							if(err) {
 								return res.json(500, {message: err.message});
 							}
-							callback({});
+							callback({message: 'Feeds saved!'});
 						});
 					});
 				}
@@ -215,11 +257,21 @@ var fs = require('fs'),
 
 	admin.activate = function(id) {
 		if (id === 'nodebb-plugin-rss') {
+			reStartCronJobs();
+		}
+	};
 
+	admin.deactivate = function(id) {
+		if (id === 'nodebb-plugin-rss') {
+			stopCronJobs();
 		}
 	};
 
 	module.admin = admin;
+
+admin.getFeeds(function(err, feeds) {
+		pullFeedsInterval(1);
+	});
 
 }(module.exports));
 
