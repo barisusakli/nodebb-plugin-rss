@@ -67,8 +67,7 @@ var fs = require('fs'),
 					return next();
 				}
 
-				var lastEntryDate = feed.lastEntryDate;
-				var mostRecent = new Date(entries[0].publishedDate).getTime();
+				var mostRecent = feed.lastEntryDate;
 
 				function postEntry(entry, callback) {
 					user.getUidByUsername(feed.username, function(err, uid) {
@@ -88,7 +87,7 @@ var fs = require('fs'),
 
 				for(var i=0; i<entries.length; ++i) {
 					entryDate = new Date(entries[i].publishedDate).getTime();
-					if(entryDate > lastEntryDate) {
+					if(entryDate > feed.lastEntryDate) {
 						if(entryDate > mostRecent) {
 							mostRecent = entryDate;
 						}
