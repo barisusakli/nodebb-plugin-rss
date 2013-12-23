@@ -268,10 +268,6 @@ var fs = require('fs'),
 
 	module.admin = admin;
 
-admin.getFeeds(function(err, feeds) {
-		pullFeedsInterval(1);
-	});
-
 }(module.exports));
 
 
