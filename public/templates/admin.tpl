@@ -129,6 +129,7 @@
 			var clone = $('#feed-template').clone();
 			clone.removeClass('hide').addClass('feed');
 			$('.feeds').append(clone);
+			enableAutoComplete();
 			return false;
 		});
 
@@ -170,15 +171,19 @@
 
 		});
 
-		$('.feed-user').autocomplete({
-			source: function(request, response) {
-				socket.emit('api:admin.user.search', request.term, function(err, results) {
-					results = results.map(function(user) { return user.username });
-					response(results);
-					$('.ui-autocomplete a').attr('href', '#');
-				});
-			}
-		});
+		function enableAutoComplete() {
+			$('.feed-user').autocomplete({
+				source: function(request, response) {
+					socket.emit('api:admin.user.search', request.term, function(err, results) {
+						results = results.map(function(user) { return user.username });
+						response(results);
+						$('.ui-autocomplete a').attr('href', '#');
+					});
+				}
+			});
+		}
+
+		enableAutoComplete();
 
 	});
 </script>
