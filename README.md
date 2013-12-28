@@ -10,7 +10,7 @@ To customise options for the parser, please consult the "RSS" page in the admini
 
 ## Usage
 
-[](http://i.imgur.com/aFyvV2i.png)
+![](http://i.imgur.com/aFyvV2i.png)
 
 1. Click 'Add Feed'
 2. Enter the RSS feed you want to pull
