@@ -5,6 +5,8 @@ var fs = require('fs'),
 	async = require('async'),
 	request = require('request'),
 	cron = require('cron').CronJob,
+	toMarkdown = require('to-markdown').toMarkdown,
+	S = require('string'),
 	topics = module.parent.require('./topics'),
 	db = module.parent.require('./database'),
 	user = module.parent.require('./user'),
@@ -79,7 +81,7 @@ var fs = require('fs'),
 							uid = 1;
 						}
 
-						topics.post(uid, entry.title, entry.content, feed.category, function(err, result) {
+						topics.post(uid, entry.title, toMarkdown(S(entry.content).stripTags('div', 'script', 'span')), feed.category, function(err, result) {
 
 						});
 					});
