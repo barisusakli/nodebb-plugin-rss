@@ -2,7 +2,7 @@
     "id": "nodebb-plugin-rss",
     "name": "RSS Feed",
     "description": "A RSS parser for NodeBB",
-    "url": "https://github.com/barisusakli/nodebb-plugin-rsss",
+    "url": "https://github.com/barisusakli/nodebb-plugin-rss",
     "library": "./index.js",
     "staticDir": "./public",
     "css": [
