@@ -5,9 +5,6 @@
     "url": "https://github.com/barisusakli/nodebb-plugin-rss",
     "library": "./index.js",
     "staticDir": "./public",
-    "css": [
-            "css/default.css"
-    ],
     "hooks": [
         { "hook": "filter:admin.header.build", "method": "admin.menu", "callbacked": false },
         { "hook": "filter:admin.create_routes", "method": "admin.route", "callbacked": true },
