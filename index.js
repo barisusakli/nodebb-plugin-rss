@@ -233,13 +233,13 @@ var fs = require('fs'),
 				method: 'post',
 				callback: function(req, res, callback) {
 
-					if(!req.body.feeds) {
-						return callback({message:'no-feeds-to-save'});
-					}
-
 					deleteFeeds(function(err) {
 						if(err) {
 							return res.json(500, {message: err.message});
+						}
+
+						if(!req.body.feeds) {
+							return callback({message:'Feeds saved!'});
 						}
 
 						saveFeeds(req.body.feeds, function(err) {
