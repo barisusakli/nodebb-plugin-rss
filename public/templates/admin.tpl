@@ -111,7 +111,7 @@
 		}
 
 
-		socket.emit('api:categories.get', function(data) {
+		socket.emit('categories.get', function(err, data) {
 			categories = data.categories;
 			addOptionsToAllSelects();
 
@@ -174,7 +174,7 @@
 		function enableAutoComplete() {
 			$('.feed-user').autocomplete({
 				source: function(request, response) {
-					socket.emit('api:admin.user.search', request.term, function(err, results) {
+					socket.emit('admin.user.search', request.term, function(err, results) {
 						results = results.map(function(user) { return user.username });
 						response(results);
 						$('.ui-autocomplete a').attr('href', '#');
