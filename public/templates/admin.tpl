@@ -90,9 +90,9 @@
 <!-- END feeds -->
 </form>
 
-<button class="btn btn-lg" id="addFeed">Add Feed</button>
+<button class="btn" id="addFeed">Add Feed</button>
 
-<button class="btn btn-lg btn-primary" id="save">Save</button>
+<button class="btn btn-primary" id="save">Save</button>
 
 <script type="text/javascript">
 	require(['forum/admin/settings'], function(Settings) {
