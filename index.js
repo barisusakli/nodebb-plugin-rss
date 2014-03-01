@@ -129,7 +129,7 @@ var fs = require('fs'),
 	admin.menu = function(custom_header, callback) {
 		custom_header.plugins.push({
 			"route": '/plugins/rss',
-			"icon": 'icon-edit',
+			"icon": 'fa-rss',
 			"name": 'RSS'
 		});
 
