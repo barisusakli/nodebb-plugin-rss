@@ -4,14 +4,13 @@
     "description": "A RSS parser for NodeBB",
     "url": "https://github.com/barisusakli/nodebb-plugin-rss",
     "library": "./index.js",
-    "staticDirs": {
-        "rss": "public"
-    },
     "hooks": [
+        { "hook": "action:app.load", "method": "init", "callbacked": true },
         { "hook": "filter:admin.header.build", "method": "admin.menu", "callbacked": false },
-        { "hook": "filter:admin.create_routes", "method": "admin.route", "callbacked": true },
+
         { "hook": "action:plugin.activate", "method": "admin.activate" },
         { "hook": "action:plugin.deactivate", "method": "admin.deactivate" }
     ],
-    "minver": "0.4.0"
+    "minver": "0.4.0",
+    "templates": "./public/templates"
 }

@@ -1,18 +1,16 @@
+'use strict';
 
-
-var fs = require('fs'),
-	path = require('path'),
-	async = require('async'),
+var async = require('async'),
 	request = require('request'),
+	winston = require('winston'),
 	cron = require('cron').CronJob,
 	toMarkdown = require('to-markdown').toMarkdown,
 	S = require('string'),
 	topics = module.parent.require('./topics'),
 	db = module.parent.require('./database'),
 	user = module.parent.require('./user'),
-	plugins = module.parent.require('./plugins'),
-	templates = module.parent.require('./../public/src/templates'),
-	meta = module.parent.require('./meta');
+	plugins = module.parent.require('./plugins');
+
 
 (function(module) {
 
@@ -22,6 +20,43 @@ var fs = require('fs'),
 	cronJobs.push(new cron('0 * * * *', function() { pullFeedsInterval(60); }, null, false));
 	cronJobs.push(new cron('0 0/12 * * *', function() { pullFeedsInterval(60 * 12); }, null, false));
 	cronJobs.push(new cron('0 0 * * *', function() { pullFeedsInterval(60 * 24); }, null, false));
+
+	module.init = function(app, middleware, controllers) {
+
+		app.get('/admin/plugins/rss', middleware.admin.buildHeader, renderAdmin);
+		app.get('/api/admin/plugins/rss', renderAdmin);
+
+		app.post('/api/admin/plugins/rss/save', save);
+	};
+
+	function renderAdmin(req, res, next) {
+		admin.getFeeds(function(err, feeds) {
+			if(err) {
+				return next(err);
+			}
+
+			res.render('admin/plugins/rss', {feeds:feeds});
+		});
+	}
+
+	function save(req, res, next) {
+		deleteFeeds(function(err) {
+			if(err) {
+				return next(err);
+			}
+
+			if(!req.body.feeds) {
+				return res.json({message:'Feeds saved!'});
+			}
+
+			saveFeeds(req.body.feeds, function(err) {
+				if(err) {
+					return next(err);
+				}
+				res.json({message: 'Feeds saved!'});
+			});
+		});
+	}
 
 	function reStartCronJobs() {
 		stopCronJobs();
@@ -71,7 +106,7 @@ var fs = require('fs'),
 
 				var mostRecent = feed.lastEntryDate;
 
-				function postEntry(entry, callback) {
+				function postEntry(entry) {
 					user.getUidByUsername(feed.username, function(err, uid) {
 						if(err) {
 							return next(err);
@@ -81,34 +116,39 @@ var fs = require('fs'),
 							uid = 1;
 						}
 
-						topics.post(uid, entry.title, toMarkdown(S(entry.content).stripTags('div', 'script', 'span')), feed.category, function(err, result) {
-
+						topics.post(uid, entry.title, toMarkdown(S(entry.content).stripTags('div', 'script', 'span')), feed.category, function(err) {
+							if (err) {
+								winston.error(err.message);
+							}
 						});
 					});
 				}
 
+				var entryDate;
 				for(var i=0; i<entries.length; ++i) {
 					entryDate = new Date(entries[i].publishedDate).getTime();
 					if(entryDate > feed.lastEntryDate) {
 						if(entryDate > mostRecent) {
 							mostRecent = entryDate;
 						}
-						postEntry(entries[i], next);
+						postEntry(entries[i]);
 					}
 				}
 
 
 				db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent);
 
-				next(err);
+				next();
 			});
 		}
 
 
 		async.each(feeds, get, function(err) {
-
+			if (err) {
+				winston.error(err.message);
+			}
 		});
-	};
+	}
 
 	function getFeedByGoogle(feedUrl, callback) {
 		request('http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=4&q=' + encodeURIComponent(feedUrl), function (err, response, body) {
@@ -124,13 +164,14 @@ var fs = require('fs'),
 		});
 	}
 
+
 	var admin = {};
 
-	admin.menu = function(custom_header, callback) {
+	admin.menu = function(custom_header) {
 		custom_header.plugins.push({
-			"route": '/plugins/rss',
-			"icon": 'fa-rss',
-			"name": 'RSS'
+			route: '/plugins/rss',
+			icon: 'fa-rss',
+			name: 'RSS'
 		});
 
 		return custom_header;
@@ -161,7 +202,7 @@ var fs = require('fs'),
 				}
 			});
 		});
-	}
+	};
 
 	function saveFeeds(feeds, callback) {
 		function saveFeed(feed, next) {
@@ -189,7 +230,7 @@ var fs = require('fs'),
 			}
 
 			function deleteFeed(key, next) {
-				db.delete('nodebb-plugin-rss:feed:' + key)
+				db.delete('nodebb-plugin-rss:feed:' + key);
 				db.setRemove('nodebb-plugin-rss:feeds', key);
 				next();
 			}
@@ -200,61 +241,6 @@ var fs = require('fs'),
 
 		});
 	}
-
-	admin.route = function(custom_routes, callback) {
-		fs.readFile(path.join(__dirname, 'public/templates/admin.tpl'), function(err, tpl) {
-
-			custom_routes.routes.push({
-				route: '/plugins/rss',
-				method: 'get',
-				options: function(req, res, callback) {
-
-					admin.getFeeds(function(err, feeds) {
-
-						if(err) {
-							return callback();
-						}
-						var newTpl = templates.prepare(tpl.toString()).parse({feeds:feeds});
-
-
-						callback({
-							req: req,
-							res: res,
-							route: '/plugins/rss',
-							name: 'Rss',
-							content: newTpl
-						});
-					});
-				}
-			});
-
-			custom_routes.api.push({
-				route: '/plugins/rss/save',
-				method: 'post',
-				callback: function(req, res, callback) {
-
-					deleteFeeds(function(err) {
-						if(err) {
-							return res.json(500, {message: err.message});
-						}
-
-						if(!req.body.feeds) {
-							return callback({message:'Feeds saved!'});
-						}
-
-						saveFeeds(req.body.feeds, function(err) {
-							if(err) {
-								return res.json(500, {message: err.message});
-							}
-							callback({message: 'Feeds saved!'});
-						});
-					});
-				}
-			});
-
-			callback(null, custom_routes);
-		});
-	};
 
 	admin.activate = function(id) {
 		if (id === 'nodebb-plugin-rss') {

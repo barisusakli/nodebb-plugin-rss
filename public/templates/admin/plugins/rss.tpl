@@ -95,7 +95,7 @@
 <button class="btn btn-primary" id="save">Save</button>
 
 <script type="text/javascript">
-	require(['forum/admin/settings'], function(Settings) {
+	$(document).ready(function() {
 		var categories = null;
 
 		function addOptionsToAllSelects() {
@@ -109,7 +109,6 @@
 				select.append('<option value=' + categories[i].cid + '>' + categories[i].name + '</option>');
 			}
 		}
-
 
 		socket.emit('categories.get', function(err, data) {
 			categories = data.categories;
@@ -175,15 +174,21 @@
 			$('.feed-user').autocomplete({
 				source: function(request, response) {
 					socket.emit('admin.user.search', request.term, function(err, results) {
-						results = results.map(function(user) { return user.username });
-						response(results);
-						$('.ui-autocomplete a').attr('href', '#');
+						if (err) {
+							return app.alertError(err.message)
+						}
+
+						if (results && results.users) {
+							var users = results.users.map(function(user) { return user.username });
+							response(users);
+							$('.ui-autocomplete a').attr('href', '#');
+						}
+
 					});
 				}
 			});
 		}
 
 		enableAutoComplete();
-
 	});
 </script>
