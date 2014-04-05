@@ -167,16 +167,15 @@ var async = require('async'),
 
 	var admin = {};
 
-	admin.menu = function(custom_header) {
+	admin.menu = function(custom_header, callback) {
 		custom_header.plugins.push({
 			route: '/plugins/rss',
 			icon: 'fa-rss',
 			name: 'RSS'
 		});
 
-		return custom_header;
+		callback(null, custom_header);
 	};
-
 
 	admin.getFeeds = function(callback) {
 		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feedUrls) {
