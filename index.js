@@ -115,12 +115,14 @@ var async = require('async'),
 						if(!uid) {
 							uid = 1;
 						}
+
 						var topicData = {
 							uid: uid,
 							title: entry.title,
-							content: toMarkdown(S(entry.content).stripTags('div', 'script', 'span')),
+							content: toMarkdown(S(entry.content).stripTags('div', 'script', 'span')).s,
 							cid: feed.category
 						};
+
 						topics.post(topicData, function(err) {
 							if (err) {
 								winston.error(err.message);
