@@ -111,7 +111,7 @@
 		}
 
 		socket.emit('categories.get', function(err, data) {
-			categories = data.categories;
+			categories = data;
 			addOptionsToAllSelects();
 
 			$('.feed-interval').each(function(index, element) {
