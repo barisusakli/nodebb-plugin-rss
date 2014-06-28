@@ -116,16 +116,26 @@ var async = require('async'),
 							uid = 1;
 						}
 
+						var tags = [];
+						if (feed.tags) {
+							tags = feed.tags.split(',');
+						}
+
 						var topicData = {
 							uid: uid,
 							title: entry.title,
 							content: toMarkdown(S(entry.content).stripTags('div', 'script', 'span')).s,
-							cid: feed.category
+							cid: feed.category,
+							tags: tags
 						};
 
-						topics.post(topicData, function(err) {
+						topics.post(topicData, function(err, result) {
 							if (err) {
 								winston.error(err.message);
+							}
+
+							if (feed.timestamp === 'feed') {
+								setTimestampToFeedPublishedDate(result, entry);
 							}
 						});
 					});
@@ -142,19 +152,34 @@ var async = require('async'),
 					}
 				}
 
-
 				db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent);
 
 				next();
 			});
 		}
 
-
 		async.each(feeds, get, function(err) {
 			if (err) {
 				winston.error(err.message);
 			}
 		});
+	}
+
+	function setTimestampToFeedPublishedDate(data, entry) {
+		var topicData = data.topicData;
+		var postData = data.postData;
+		var tid = topicData.tid;
+		var pid = postData.pid;
+		var timestamp = new Date(entry.publishedDate).getTime();
+
+		db.setObjectField('topic:' + tid, 'timestamp', timestamp);
+		db.sortedSetAdd('topics:tid', timestamp, tid);
+		db.sortedSetAdd('uid:' + topicData.uid + ':topics', timestamp, tid);
+		db.sortedSetAdd('categories:' + topicData.cid + ':tid', timestamp, tid);
+
+		db.setObjectField('post:' + pid, 'timestamp', timestamp);
+		db.sortedSetAdd('posts:pid', timestamp, pid);
+		db.sortedSetAdd('categories:recent_posts:cid:' + topicData.cid, timestamp, pid);
 	}
 
 	function getFeedByGoogle(feedUrl, callback) {
@@ -186,26 +211,14 @@ var async = require('async'),
 
 	admin.getFeeds = function(callback) {
 		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feedUrls) {
-
 			if(err) {
 				return callback(err);
 			}
 
-			function getFeed(feedUrl, next) {
+			async.map(feedUrls, function (feedUrl, next) {
 				db.getObject('nodebb-plugin-rss:feed:' + feedUrl, next);
-			}
-
-			async.map(feedUrls, getFeed, function(err, results) {
-
-				if(err) {
-					return callback(err);
-				}
-
-				if(results) {
-					callback(null, results);
-				} else {
-					callback(null, []);
-				}
+			}, function(err, results) {
+				callback(err, results ? results : []);
 			});
 		});
 	};
@@ -220,9 +233,7 @@ var async = require('async'),
 			next();
 		}
 
-		async.each(feeds, saveFeed, function(err) {
-			callback(err);
-		});
+		async.each(feeds, saveFeed, callback);
 	}
 
 	function deleteFeeds(callback) {
@@ -241,10 +252,7 @@ var async = require('async'),
 				next();
 			}
 
-			async.each(feeds, deleteFeed, function(err) {
-				callback(err);
-			});
-
+			async.each(feeds, deleteFeed, callback);
 		});
 	}
 
