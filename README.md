@@ -10,11 +10,13 @@ To customise options for the parser, please consult the "RSS" page in the admini
 
 ## Usage
 
-![](http://i.imgur.com/aFyvV2i.png)
+![](http://i.imgur.com/X1lqTPG.png)
 
 1. Click 'Add Feed'
 2. Enter the RSS feed you want to pull
 3. Select the category you want to post to
-4. Type in the username you want to post as
-5. Select the interval to query the RSS feed
-6. Click Save.
+4. Enter tags if you want to tag the posted topics
+5. Type in the username you want to post as
+6. Select the interval to query the RSS feed
+7. Select the timestamp to use for the topic
+8. Click Save.
