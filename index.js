@@ -96,8 +96,9 @@ var async = require('async'),
 			}
 
 			getFeedByGoogle(feed.url, function(err, entries) {
-				if(err) {
-					return next(err);
+				if (err) {
+					winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
+					return next();
 				}
 
 				if(!entries || !entries.length) {
@@ -184,12 +185,14 @@ var async = require('async'),
 
 	function getFeedByGoogle(feedUrl, callback) {
 		request('http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=4&q=' + encodeURIComponent(feedUrl), function (err, response, body) {
-
 			if (!err && response.statusCode === 200) {
+				try {
+					var p = JSON.parse(body);
 
-				var p = JSON.parse(body);
-
-				callback(null, p.responseData.feed.entries);
+					callback(null, p.responseData.feed.entries);
+				} catch (e) {
+					callback(e);
+				}
 			} else {
 				callback(err);
 			}
