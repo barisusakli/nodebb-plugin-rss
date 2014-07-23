@@ -125,7 +125,7 @@ var async = require('async'),
 						var topicData = {
 							uid: uid,
 							title: entry.title,
-							content: toMarkdown(S(entry.content).stripTags('div', 'script', 'span')).s,
+							content: toMarkdown(S(entry.content).stripTags('div', 'script', 'span').trim()).s,
 							cid: feed.category,
 							tags: tags
 						};
