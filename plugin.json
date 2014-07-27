@@ -5,7 +5,7 @@
     "url": "https://github.com/barisusakli/nodebb-plugin-rss",
     "library": "./index.js",
     "hooks": [
-        { "hook": "action:app.load", "method": "init" },
+        { "hook": "static:app.load", "method": "init" },
         { "hook": "filter:admin.header.build", "method": "admin.menu" },
 
         { "hook": "action:plugin.activate", "method": "admin.activate" },
