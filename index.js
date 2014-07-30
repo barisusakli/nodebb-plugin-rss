@@ -15,6 +15,7 @@ var async = require('async'),
 (function(module) {
 
 	var cronJobs = [];
+	var settings = {};
 
 	cronJobs.push(new cron('* * * * *', function() { pullFeedsInterval(1); }, null, false));
 	cronJobs.push(new cron('0 * * * *', function() { pullFeedsInterval(60); }, null, false));
@@ -32,12 +33,19 @@ var async = require('async'),
 	};
 
 	function renderAdmin(req, res, next) {
-		admin.getFeeds(function(err, feeds) {
+		async.parallel({
+			feeds: function(next) {
+				admin.getFeeds(next);
+			},
+			settings: function(next) {
+				admin.getSettings(next);
+			}
+		}, function(err, results) {
 			if(err) {
 				return next(err);
 			}
 
-			res.render('admin/plugins/rss', {feeds:feeds});
+			res.render('admin/plugins/rss', results);
 		});
 	}
 
@@ -50,11 +58,18 @@ var async = require('async'),
 			if(!req.body.feeds) {
 				return res.json({message:'Feeds saved!'});
 			}
-
-			saveFeeds(req.body.feeds, function(err) {
+			async.parallel([
+				function(next) {
+					saveFeeds(req.body.feeds, next);
+				},
+				function(next) {
+					admin.saveSettings(req.body.settings, next);
+				}
+			], function(err) {
 				if(err) {
 					return next(err);
 				}
+
 				res.json({message: 'Feeds saved!'});
 			});
 		});
@@ -93,7 +108,7 @@ var async = require('async'),
 
 		function get(feed, next) {
 
-			if(!feed.lastEntryDate) {
+			if (!feed.lastEntryDate) {
 				feed.lastEntryDate = 0;
 			}
 
@@ -124,10 +139,18 @@ var async = require('async'),
 							tags = feed.tags.split(',');
 						}
 
+						var content = S(entry.content).stripTags('div', 'script', 'span').trim().s;
+
+						if (settings.collapseWhiteSpace) {
+							content = S(content).collapseWhitespace().s;
+						}
+
+						content = toMarkdown(content);
+
 						var topicData = {
 							uid: uid,
 							title: entry.title,
-							content: toMarkdown(S(entry.content).stripTags('div', 'script', 'span').trim()).s,
+							content: content,
 							cid: feed.category,
 							tags: tags
 						};
@@ -228,6 +251,23 @@ var async = require('async'),
 		});
 	};
 
+	admin.getSettings = function(callback) {
+		db.getObject('nodebb-plugin-rss:settings', function(err, settings) {
+			if (err) {
+				return callback(err);
+			}
+			settings.collapseWhiteSpace = parseInt(settings.collapseWhiteSpace, 10) === 1;
+			callback(null, settings);
+		});
+	};
+
+	admin.saveSettings = function(data, callback) {
+		settings.collapseWhiteSpace = data.collapseWhiteSpace;
+		db.setObject('nodebb-plugin-rss:settings', {
+			collapseWhiteSpace: data.collapseWhiteSpace
+		}, callback);
+	};
+
 	function saveFeeds(feeds, callback) {
 		function saveFeed(feed, next) {
 			if(!feed.url) {
@@ -272,6 +312,13 @@ var async = require('async'),
 			stopCronJobs();
 		}
 	};
+
+	admin.getSettings(function(err, settingsData) {
+		if (err) {
+			return winston.error(err.message);
+		}
+		settings = settingsData;
+	});
 
 	module.admin = admin;
 

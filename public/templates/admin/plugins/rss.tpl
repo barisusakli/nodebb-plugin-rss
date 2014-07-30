@@ -8,6 +8,12 @@
 
 <button class="btn btn-primary" id="save">Save</button>
 
+<div class="checkbox">
+	<label>
+		<input id="collapseWhiteSpace" type="checkbox" <!-- IF settings.collapseWhiteSpace -->checked<!-- ENDIF settings.collapseWhiteSpace -->> Collapse Whitespace
+	</label>
+</div>
+
 <script src="/vendor/jquery/bootstrap-tagsinput/bootstrap-tagsinput.min.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
@@ -91,7 +97,13 @@
 				}
 			});
 
-			$.post('/api/admin/plugins/rss/save', {_csrf : $('#csrf_token').val(), feeds : feedsToSave}, function(data) {
+			$.post('/api/admin/plugins/rss/save', {
+				_csrf: $('#csrf_token').val(),
+				feeds: feedsToSave,
+				settings: {
+					collapseWhiteSpace: $('#collapseWhiteSpace').prop('checked') ? 1 : 0
+				}
+			}, function(data) {
 				app.alert({
 					title: 'Success',
 					message: data.message,
