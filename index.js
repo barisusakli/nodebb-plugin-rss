@@ -256,6 +256,8 @@ var async = require('async'),
 			if (err) {
 				return callback(err);
 			}
+			settings = settings || {};
+
 			settings.collapseWhiteSpace = parseInt(settings.collapseWhiteSpace, 10) === 1;
 			callback(null, settings);
 		});
