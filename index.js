@@ -90,8 +90,11 @@ var async = require('async'),
 
 	function pullFeedsInterval(interval) {
 		admin.getFeeds(function(err, feeds) {
+			if (err || !Array.isArray(feeds)) {
+				return;
+			}
 			feeds = feeds.filter(function(item) {
-				return parseInt(item.interval, 10) === interval;
+				return item && parseInt(item.interval, 10) === interval;
 			});
 
 			pullFeeds(feeds);
