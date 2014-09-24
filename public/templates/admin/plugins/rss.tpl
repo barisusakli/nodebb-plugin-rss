@@ -14,6 +14,8 @@
 	</label>
 </div>
 
+<input id="csrf_token" type="hidden" value="{csrf}" />
+
 <script src="/vendor/jquery/bootstrap-tagsinput/bootstrap-tagsinput.min.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {

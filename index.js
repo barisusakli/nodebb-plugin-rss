@@ -24,10 +24,10 @@ var async = require('async'),
 
 	module.init = function(app, middleware, controllers, callback) {
 
-		app.get('/admin/plugins/rss', middleware.admin.buildHeader, renderAdmin);
-		app.get('/api/admin/plugins/rss', renderAdmin);
+		app.get('/admin/plugins/rss', middleware.applyCSRF, middleware.admin.buildHeader, renderAdmin);
+		app.get('/api/admin/plugins/rss', middleware.applyCSRF, renderAdmin);
 
-		app.post('/api/admin/plugins/rss/save', save);
+		app.post('/api/admin/plugins/rss/save', middleware.applyCSRF, save);
 
 		callback();
 	};
@@ -44,7 +44,7 @@ var async = require('async'),
 			if(err) {
 				return next(err);
 			}
-
+			results.csrf = req.csrfToken();
 			res.render('admin/plugins/rss', results);
 		});
 	}
