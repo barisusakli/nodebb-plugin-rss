@@ -11,6 +11,6 @@
         { "hook": "action:plugin.activate", "method": "admin.activate" },
         { "hook": "action:plugin.deactivate", "method": "admin.deactivate" }
     ],
-    "minver": "0.4.0",
+    "compatibility": ">=0.5.1",
     "templates": "./public/templates"
 }
