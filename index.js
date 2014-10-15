@@ -6,6 +6,7 @@ var async = require('async'),
 	cron = require('cron').CronJob,
 	toMarkdown = require('to-markdown').toMarkdown,
 	S = require('string'),
+	meta = module.parent.require('./meta'),
 	topics = module.parent.require('./topics'),
 	db = module.parent.require('./database'),
 	user = module.parent.require('./user'),
@@ -127,9 +128,9 @@ var async = require('async'),
 
 				var mostRecent = feed.lastEntryDate;
 
-				function postEntry(entry) {
+				function postEntry(entry, next) {
 					user.getUidByUsername(feed.username, function(err, uid) {
-						if(err) {
+						if (err) {
 							return next(err);
 						}
 
@@ -166,24 +167,25 @@ var async = require('async'),
 							if (feed.timestamp === 'feed') {
 								setTimestampToFeedPublishedDate(result, entry);
 							}
+
+							user.setUserField(uid, 'lastposttime', Date.now() - (parseInt(meta.config.postDelay, 10) + 1) * 1000, next);
 						});
 					});
 				}
 
 				var entryDate;
-				for(var i=0; i<entries.length; ++i) {
-					entryDate = new Date(entries[i].publishedDate).getTime();
-					if(entryDate > feed.lastEntryDate) {
+				async.each(entries, function(entry, next) {
+					entryDate = new Date(entry.publishedDate).getTime();
+					if (entryDate > feed.lastEntryDate) {
 						if(entryDate > mostRecent) {
 							mostRecent = entryDate;
 						}
-						postEntry(entries[i]);
+						postEntry(entry, next);
 					}
-				}
-
-				db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent);
-
-				next();
+				}, function(err) {
+					db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent);
+					next();
+				});
 			});
 		}
 
