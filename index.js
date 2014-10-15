@@ -160,7 +160,7 @@ var async = require('async'),
 
 						topics.post(topicData, function(err, result) {
 							if (err) {
-								winston.error(err.message);
+								return winston.error(err.message);
 							}
 
 							if (feed.timestamp === 'feed') {
