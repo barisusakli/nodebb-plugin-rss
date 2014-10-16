@@ -174,7 +174,7 @@ var async = require('async'),
 				}
 
 				var entryDate;
-				async.each(entries, function(entry, next) {
+				async.eachSeries(entries, function(entry, next) {
 					entryDate = new Date(entry.publishedDate).getTime();
 					if (entryDate > feed.lastEntryDate) {
 						if(entryDate > mostRecent) {
@@ -183,8 +183,12 @@ var async = require('async'),
 						postEntry(entry, next);
 					}
 				}, function(err) {
-					db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent);
-					next();
+					db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent, function(err) {
+						if (err) {
+							return next(err);
+						}
+						feed.lastEntryDate = mostRecent;
+					});
 				});
 			});
 		}
