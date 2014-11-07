@@ -203,13 +203,18 @@ var async = require('async'),
 		var timestamp = new Date(entry.publishedDate).getTime();
 
 		db.setObjectField('topic:' + tid, 'timestamp', timestamp);
-		db.sortedSetAdd('topics:tid', timestamp, tid);
-		db.sortedSetAdd('uid:' + topicData.uid + ':topics', timestamp, tid);
-		db.sortedSetAdd('categories:' + topicData.cid + ':tid', timestamp, tid);
+		db.sortedSetsAdd([
+			'topics:tid',
+			'cid:' + topicData.cid + ':tids',
+			'cid:' + topicData.cid + ':uid:' + topicData.uid + ':tids',
+			'uid:' + topicData.uid + ':topics'
+		], timestamp, tid);
 
 		db.setObjectField('post:' + pid, 'timestamp', timestamp);
-		db.sortedSetAdd('posts:pid', timestamp, pid);
-		db.sortedSetAdd('categories:recent_posts:cid:' + topicData.cid, timestamp, pid);
+		db.sortedSetsAdd([
+			'posts:pid',
+			'cid:' + topicData.cid + ':pids'
+		], timestamp, pid);
 	}
 
 	function getFeedByGoogle(feedUrl, callback) {
