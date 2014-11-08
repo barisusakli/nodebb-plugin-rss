@@ -23,12 +23,12 @@ var async = require('async'),
 	cronJobs.push(new cron('0 0/12 * * *', function() { pullFeedsInterval(60 * 12); }, null, false));
 	cronJobs.push(new cron('0 0 * * *', function() { pullFeedsInterval(60 * 24); }, null, false));
 
-	module.init = function(app, middleware, controllers, callback) {
+	module.init = function(params, callback) {
 
-		app.get('/admin/plugins/rss', middleware.applyCSRF, middleware.admin.buildHeader, renderAdmin);
-		app.get('/api/admin/plugins/rss', middleware.applyCSRF, renderAdmin);
+		params.router.get('/admin/plugins/rss', params.middleware.applyCSRF, params.middleware.admin.buildHeader, renderAdmin);
+		params.router.get('/api/admin/plugins/rss', params.middleware.applyCSRF, renderAdmin);
 
-		app.post('/api/admin/plugins/rss/save', middleware.applyCSRF, save);
+		params.router.post('/api/admin/plugins/rss/save', params.middleware.applyCSRF, save);
 
 		callback();
 	};
