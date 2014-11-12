@@ -185,7 +185,10 @@ var async = require('async'),
 						next();
 					}
 				}, function(err) {
-					db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent, next);
+					// only save lastEntryDate if it has changed
+					if (feed.lastEntryDate < mostRecent) {
+						db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent, next);
+					}
 				});
 			});
 		}
