@@ -181,6 +181,8 @@ var async = require('async'),
 							mostRecent = entryDate;
 						}
 						postEntry(entry, next);
+					} else {
+						next();
 					}
 				}, function(err) {
 					db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent, next);
