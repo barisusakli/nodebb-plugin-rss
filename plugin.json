@@ -11,6 +11,5 @@
         { "hook": "action:plugin.activate", "method": "admin.activate" },
         { "hook": "action:plugin.deactivate", "method": "admin.deactivate" }
     ],
-    "compatibility": ">=0.5.1",
     "templates": "./public/templates"
 }

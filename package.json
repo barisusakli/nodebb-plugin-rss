@@ -18,5 +18,8 @@
     "cron": "~1.0.1",
     "to-markdown": "0.0.1",
     "string": "~1.7.0"
+  },
+  "nbbpm": {
+    "compatibility": "^0.6.0"
   }
 }
