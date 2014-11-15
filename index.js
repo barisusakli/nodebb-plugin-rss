@@ -109,94 +109,97 @@ var async = require('async'),
 	});
 
 	function pullFeeds(feeds) {
-
-		function get(feed, next) {
-
-			if (!feed.lastEntryDate) {
-				feed.lastEntryDate = 0;
-			}
-
-			getFeedByGoogle(feed.url, function(err, entries) {
-				if (err) {
-					winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
-					return next();
-				}
-
-				if(!entries || !entries.length) {
-					return next();
-				}
-
-				var mostRecent = feed.lastEntryDate;
-
-				function postEntry(entry, next) {
-					user.getUidByUsername(feed.username, function(err, uid) {
-						if (err) {
-							return next(err);
-						}
-
-						if(!uid) {
-							uid = 1;
-						}
-
-						var tags = [];
-						if (feed.tags) {
-							tags = feed.tags.split(',');
-						}
-
-						var content = S(entry.content).stripTags('div', 'script', 'span').trim().s;
-
-						if (settings.collapseWhiteSpace) {
-							content = S(content).collapseWhitespace().s;
-						}
-
-						content = toMarkdown(content);
-
-						var topicData = {
-							uid: uid,
-							title: entry.title,
-							content: content,
-							cid: feed.category,
-							tags: tags
-						};
-
-						topics.post(topicData, function(err, result) {
-							if (err) {
-								return winston.error(err.message);
-							}
-
-							if (feed.timestamp === 'feed') {
-								setTimestampToFeedPublishedDate(result, entry);
-							}
-
-							user.setUserField(uid, 'lastposttime', Date.now() - (parseInt(meta.config.postDelay, 10) + 1) * 1000, next);
-						});
-					});
-				}
-
-				var entryDate;
-				async.eachSeries(entries, function(entry, next) {
-					entryDate = new Date(entry.publishedDate).getTime();
-					if (entryDate > feed.lastEntryDate) {
-						if(entryDate > mostRecent) {
-							mostRecent = entryDate;
-						}
-						postEntry(entry, next);
-					} else {
-						next();
-					}
-				}, function(err) {
-					// only save lastEntryDate if it has changed
-					if (feed.lastEntryDate < mostRecent) {
-						db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent, next);
-					}
-				});
-			});
-		}
-
-		async.each(feeds, get, function(err) {
+		async.each(feeds, pullFeed, function(err) {
 			if (err) {
 				winston.error(err.message);
 			}
+		});
+	}
+
+	function pullFeed(feed, callback) {
+		if (!feed) {
+			return callback();
+		}
+		if (!feed.lastEntryDate) {
+			feed.lastEntryDate = 0;
+		}
+
+		getFeedByGoogle(feed.url, function(err, entries) {
+			if (err) {
+				winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
+				return callback();
+			}
+
+			if(!Array.isArray(entries) || !entries.length) {
+				return callback();
+			}
+
+			var mostRecent = feed.lastEntryDate;
+			var entryDate;
+			async.eachSeries(entries, function(entry, next) {
+				entryDate = new Date(entry.publishedDate).getTime();
+				if (entryDate > feed.lastEntryDate) {
+					if(entryDate > mostRecent) {
+						mostRecent = entryDate;
+					}
+					postEntry(feed, entry, next);
+				} else {
+					next();
+				}
+			}, function(err) {
+				// only save lastEntryDate if it has changed
+				if (mostRecent > feed.lastEntryDate) {
+					db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent, callback);
+				} else {
+					callback();
+				}
+			});
+		});
+	}
+
+	function postEntry(feed, entry, callback) {
+		user.getUidByUsername(feed.username, function(err, uid) {
+			if (err) {
+				return callback(err);
+			}
+
+			if(!uid) {
+				uid = 1;
+			}
+
+			var tags = [];
+			if (feed.tags) {
+				tags = feed.tags.split(',');
+			}
+
+			var content = S(entry.content).stripTags('div', 'script', 'span').trim().s;
+
+			if (settings.collapseWhiteSpace) {
+				content = S(content).collapseWhitespace().s;
+			}
+
+			content = toMarkdown(content);
+
+			var topicData = {
+				uid: uid,
+				title: entry.title,
+				content: content,
+				cid: feed.category,
+				tags: tags
+			};
+
+			topics.post(topicData, function(err, result) {
+				if (err) {
+					winston.error(err.message);
+					return callback();
+				}
+
+				if (feed.timestamp === 'feed') {
+					setTimestampToFeedPublishedDate(result, entry);
+				}
+
+				user.setUserField(uid, 'lastposttime', Date.now() - (parseInt(meta.config.postDelay, 10) + 1) * 1000, callback);
+			});
 		});
 	}
 
