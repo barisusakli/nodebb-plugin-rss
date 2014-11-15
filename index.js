@@ -124,7 +124,7 @@ var async = require('async'),
 			feed.lastEntryDate = 0;
 		}
 
-		getFeedByGoogle(feed.url, function(err, entries) {
+		getFeedByGoogle(feed.url, feed.entriesToPull, function(err, entries) {
 			if (err) {
 				winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
 				return callback();
@@ -225,8 +225,10 @@ var async = require('async'),
 		], timestamp, pid);
 	}
 
-	function getFeedByGoogle(feedUrl, callback) {
-		request('http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=4&q=' + encodeURIComponent(feedUrl), function (err, response, body) {
+	function getFeedByGoogle(feedUrl, entriesToPull, callback) {
+		entriesToPull = parseInt(entriesToPull, 10);
+		entriesToPull = entriesToPull ? entriesToPull : 4;
+		request('http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=' + entriesToPull + '&q=' + encodeURIComponent(feedUrl), function (err, response, body) {
 			if (!err && response.statusCode === 200) {
 				try {
 					var p = JSON.parse(body);
@@ -256,14 +258,23 @@ var async = require('async'),
 
 	admin.getFeeds = function(callback) {
 		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feedUrls) {
-			if(err) {
+			if (err) {
 				return callback(err);
 			}
 
 			async.map(feedUrls, function (feedUrl, next) {
 				db.getObject('nodebb-plugin-rss:feed:' + feedUrl, next);
 			}, function(err, results) {
-				callback(err, results ? results : []);
+				if (err) {
+					return callback(err);
+				}
+				results.forEach(function(feed) {
+					if (feed) {
+						feed.entriesToPull = feed.entriesToPull || 4;
+					}
+				});
+
+				callback(null, results ? results : []);
 			});
 		});
 	};

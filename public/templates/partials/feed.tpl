@@ -24,13 +24,14 @@
 			</div>
 		</div>
 
-		<div class="col-sm-3 col-xs-12">
+		<div class="col-sm-2 col-xs-12">
 			<div class="form-group">
 				<label>User</label>
 				<input type="text" class="form-control feed-user" placeholder="User to post as" value="{feeds.username}">
 			</div>
 		</div>
-		<div class="col-sm-3 col-xs-12">
+
+		<div class="col-sm-2 col-xs-12">
 			<div class="form-group">
 				<label>Interval</label>
 				<select class="form-control feed-interval" data-interval="{feeds.interval}">
@@ -39,6 +40,13 @@
 					<option value="1440">24 Hours</option>
 					<option value="1">1 Minute</option>
 				</select>
+			</div>
+		</div>
+
+		<div class="col-sm-2 col-xs-12">
+			<div class="form-group">
+				<label># Entries / Interval</label>
+				<input type="text" class="form-control feed-entries-to-pull" placeholder="Number of entries to pull every interval" value="{feeds.entriesToPull}">
 			</div>
 		</div>
 

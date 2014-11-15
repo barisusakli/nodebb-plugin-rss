@@ -89,6 +89,7 @@
 					category : child.find('.feed-category').val(),
 					interval : child.find('.feed-interval').val(),
 					username: child.find('.feed-user').val(),
+					entriesToPull: child.find('.feed-entries-to-pull').val(),
 					tags: child.find('.feed-tags').val(),
 					timestamp: child.find('.feed-topictimestamp').val(),
 					lastEntryDate: child.find('.feed-lastEntryDate').val(),
