@@ -59,7 +59,8 @@
 						username: '',
 						tags: '',
 						timestamp: 'now',
-						lastEntryDate: 0
+						lastEntryDate: 0,
+						entriesToPull: 4
 					}]
 				});
 
