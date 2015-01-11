@@ -122,7 +122,7 @@
 		function enableAutoComplete(selector) {
 			selector.autocomplete({
 				source: function(request, response) {
-					socket.emit('admin.user.search', request.term, function(err, results) {
+					socket.emit('admin.user.search', {query: request.term}, function(err, results) {
 						if (err) {
 							return app.alertError(err.message)
 						}
