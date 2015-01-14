@@ -133,7 +133,7 @@ var async = require('async'),
 			if(!Array.isArray(entries) || !entries.length) {
 				return callback();
 			}
-
+			feed.lastEntryDate = parseInt(feed.lastEntryDate, 10);
 			var mostRecent = feed.lastEntryDate;
 			var entryDate;
 			async.eachSeries(entries, function(entry, next) {
