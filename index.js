@@ -299,35 +299,37 @@ var async = require('async'),
 	};
 
 	function saveFeeds(feeds, callback) {
-		function saveFeed(feed, next) {
+		async.each(feeds, function saveFeed(feed, next) {
 			if(!feed.url) {
 				return next();
 			}
-			db.setObject('nodebb-plugin-rss:feed:' + feed.url, feed);
-			db.setAdd('nodebb-plugin-rss:feeds', feed.url);
-			next();
-		}
-
-		async.each(feeds, saveFeed, callback);
+			async.parallel([
+				function(next) {
+					db.setObject('nodebb-plugin-rss:feed:' + feed.url, feed, next);
+				},
+				function(next) {
+					db.setAdd('nodebb-plugin-rss:feeds', feed.url, next);
+				}
+			], next);
+		}, callback);
 	}
 
 	function deleteFeeds(callback) {
 		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feeds) {
-			if(err) {
+			if (err || !feeds) {
 				return callback(err);
 			}
 
-			if(!feeds) {
-				return callback();
-			}
-
-			function deleteFeed(key, next) {
-				db.delete('nodebb-plugin-rss:feed:' + key);
-				db.setRemove('nodebb-plugin-rss:feeds', key);
-				next();
-			}
-
-			async.each(feeds, deleteFeed, callback);
+			async.each(feeds, function(key, next) {
+				async.parallel([
+					function(next) {
+						db.delete('nodebb-plugin-rss:feed:' + key, next);
+					},
+					function(next) {
+						db.setRemove('nodebb-plugin-rss:feeds', key, next);
+					}
+				], next);
+			}, callback);
 		});
 	}
 
