@@ -197,8 +197,8 @@ var async = require('async'),
 				if (feed.timestamp === 'feed') {
 					setTimestampToFeedPublishedDate(result, entry);
 				}
-
-				user.setUserField(uid, 'lastposttime', Date.now() - (parseInt(meta.config.postDelay, 10) + 1) * 1000, callback);
+				var max = Math.max(parseInt(meta.config.postDelay, 10), parseInt(meta.config.newbiePostDelay, 10)) + 1;
+				user.setUserField(uid, 'lastposttime', Date.now() - max * 1000, callback);
 			});
 		});
 	}
