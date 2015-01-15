@@ -109,7 +109,7 @@ var async = require('async'),
 	});
 
 	function pullFeeds(feeds) {
-		async.each(feeds, pullFeed, function(err) {
+		async.eachSeries(feeds, pullFeed, function(err) {
 			if (err) {
 				winston.error(err.message);
 			}
@@ -197,7 +197,7 @@ var async = require('async'),
 				if (feed.timestamp === 'feed') {
 					setTimestampToFeedPublishedDate(result, entry);
 				}
-				var max = Math.max(parseInt(meta.config.postDelay, 10), parseInt(meta.config.newbiePostDelay, 10)) + 1;
+				var max = Math.max(parseInt(meta.config.postDelay, 10) || 10, parseInt(meta.config.newbiePostDelay, 10) || 10) + 1;
 				user.setUserField(uid, 'lastposttime', Date.now() - max * 1000, callback);
 			});
 		});
