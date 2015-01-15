@@ -315,6 +315,7 @@ var async = require('async'),
 	}
 
 	function deleteFeeds(callback) {
+		callback = callback || function() {};
 		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feeds) {
 			if (err || !feeds) {
 				return callback(err);
@@ -333,6 +334,11 @@ var async = require('async'),
 		});
 	}
 
+	function deleteSettings(callback) {
+		callback = callback || function() {};
+		db.delete('nodebb-plugin-rss:settings', callback);
+	}
+
 	admin.activate = function(id) {
 		if (id === 'nodebb-plugin-rss') {
 			reStartCronJobs();
@@ -342,6 +348,13 @@ var async = require('async'),
 	admin.deactivate = function(id) {
 		if (id === 'nodebb-plugin-rss') {
 			stopCronJobs();
+		}
+	};
+
+	admin.uninstall = function(id) {
+		if (id === 'nodebb-plugin-rss') {
+			deleteFeeds();
+			deleteSettings();
 		}
 	};
 

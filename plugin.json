@@ -9,7 +9,8 @@
         { "hook": "filter:admin.header.build", "method": "admin.menu" },
 
         { "hook": "action:plugin.activate", "method": "admin.activate" },
-        { "hook": "action:plugin.deactivate", "method": "admin.deactivate" }
+        { "hook": "action:plugin.deactivate", "method": "admin.deactivate" },
+        { "hook": "action:plugin.uninstall", "method": "admin.uninstall"}
     ],
     "templates": "./public/templates"
 }
