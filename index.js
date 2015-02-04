@@ -144,7 +144,9 @@ var async = require('async'),
 			if(!Array.isArray(entries) || !entries.length) {
 				return callback();
 			}
+
 			feed.lastEntryDate = parseInt(feed.lastEntryDate, 10);
+
 			var mostRecent = feed.lastEntryDate;
 			var entryDate;
 			async.eachSeries(entries, function(entry, next) {
@@ -153,6 +155,7 @@ var async = require('async'),
 					if(entryDate > mostRecent) {
 						mostRecent = entryDate;
 					}
+					winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.publishedDate);
 					postEntry(feed, entry, next);
 				} else {
 					next();
