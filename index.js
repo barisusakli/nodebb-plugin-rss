@@ -32,6 +32,7 @@ var async = require('async'),
 		}
 
 		if (active) {
+			stopCronJobs();
 			reStartCronJobs();
 		}
 	});
