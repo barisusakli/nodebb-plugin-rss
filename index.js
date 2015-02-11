@@ -32,10 +32,15 @@ var async = require('async'),
 		}
 
 		if (active) {
-			stopCronJobs();
 			reStartCronJobs();
 		}
 	});
+
+	module.onClearRequireCache = function(data, callback) {
+		stopCronJobs();
+		cronJobs.length = 0;
+		callback(null, data);
+	};
 
 	module.init = function(params, callback) {
 
