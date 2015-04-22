@@ -71,13 +71,14 @@ var async = require('async'),
 
 	function save(req, res, next) {
 		deleteFeeds(function(err) {
-			if(err) {
+			if (err) {
 				return next(err);
 			}
 
-			if(!req.body.feeds) {
+			if (!req.body.feeds) {
 				return res.json({message:'Feeds saved!'});
 			}
+
 			async.parallel([
 				function(next) {
 					saveFeeds(req.body.feeds, next);
@@ -318,6 +319,7 @@ var async = require('async'),
 				return callback(err);
 			}
 			pubsub.publish('nodebb-plugin-rss:settings', settings);
+			callback();
 		});
 	};
 
@@ -340,7 +342,7 @@ var async = require('async'),
 	function deleteFeeds(callback) {
 		callback = callback || function() {};
 		db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feeds) {
-			if (err || !feeds) {
+			if (err || !feeds || !feeds.length) {
 				return callback(err);
 			}
 
