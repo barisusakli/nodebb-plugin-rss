@@ -1,3 +1,4 @@
+<div class="col-lg-12">
 <h1>RSS</h1>
 
 <div class="form feeds">
@@ -12,6 +13,7 @@
 	<label>
 		<input id="collapseWhiteSpace" type="checkbox" <!-- IF settings.collapseWhiteSpace -->checked<!-- ENDIF settings.collapseWhiteSpace -->> Collapse Whitespace
 	</label>
+</div>
 </div>
 
 <input id="csrf_token" type="hidden" value="{csrf}" />
