@@ -16,7 +16,7 @@
 
 <input id="csrf_token" type="hidden" value="{csrf}" />
 
-<script src="/vendor/jquery/bootstrap-tagsinput/bootstrap-tagsinput.min.js"></script>
+<script src="{config.relative_path}/vendor/jquery/bootstrap-tagsinput/bootstrap-tagsinput.min.js"></script>
 <script type="text/javascript">
 	$(document).ready(function() {
 		var categories = null;
@@ -101,7 +101,7 @@
 				}
 			});
 
-			$.post('/api/admin/plugins/rss/save', {
+			$.post('{config.relative_path}/api/admin/plugins/rss/save', {
 				_csrf: $('#csrf_token').val(),
 				feeds: feedsToSave,
 				settings: {
