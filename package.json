@@ -14,12 +14,11 @@
   "author": "Baris Usakli <baris@designcreateplay.com>",
   "license": "BSD-2-Clause",
   "dependencies": {
-    "request": "^2.34.0",
     "cron": "~1.0.1",
     "to-markdown": "^0.0.2",
     "string": "~1.7.0"
   },
   "nbbpm": {
-    "compatibility": "^0.6.0"
+    "compatibility": "^0.6.0 || ^0.7.0 || ^0.8.0"
   }
 }

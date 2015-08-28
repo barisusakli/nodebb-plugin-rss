@@ -1,8 +1,8 @@
 'use strict';
 
-var async = require('async'),
-	request = require('request'),
-	winston = require('winston'),
+var async = module.parent.require('async'),
+	request = module.parent.require('request'),
+	winston = module.parent.require('winston'),
 	cron = require('cron').CronJob,
 	toMarkdown = require('to-markdown').toMarkdown,
 	S = require('string'),
