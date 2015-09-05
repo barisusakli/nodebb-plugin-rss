@@ -15,7 +15,7 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "cron": "~1.0.1",
-    "to-markdown": "^0.0.2",
+    "to-markdown": "^1.2.1",
     "string": "~1.7.0"
   },
   "nbbpm": {
