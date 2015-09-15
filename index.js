@@ -4,7 +4,7 @@ var async = module.parent.require('async'),
 	request = module.parent.require('request'),
 	winston = module.parent.require('winston'),
 	cron = require('cron').CronJob,
-	toMarkdown = require('to-markdown').toMarkdown,
+	toMarkdown = require('to-markdown'),
 	S = require('string'),
 
 	nconf = module.parent.require('nconf'),
