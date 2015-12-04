@@ -148,9 +148,7 @@ var async = module.parent.require('async'),
 				return callback();
 			}
 
-			if(!Array.isArray(entries) || !entries.length) {
-				return callback();
-			}
+			var entries = Array.isArray(entries) ? entries : [entries];
 
 			feed.lastEntryDate = parseInt(feed.lastEntryDate, 10);
 
@@ -252,7 +250,10 @@ var async = module.parent.require('async'),
 		entriesToPull = entriesToPull ? entriesToPull : 4;
 		var yql = encodeURIComponent('select entry FROM feednormalizer where url=\'' +
 			feedUrl + '\' AND output=\'atom_1.0\' | truncate(count=' + entriesToPull + ')');
-		request('https://query.yahooapis.com/v1/public/yql?q=' + yql + '&format=json', function (err, response, body) {
+		request({
+			url: 'https://query.yahooapis.com/v1/public/yql?q=' + yql + '&format=json',
+			timeout: 120000
+		}, function (err, response, body) {
 			if (!err && response.statusCode === 200) {
 				try {
 					var p = JSON.parse(body);
