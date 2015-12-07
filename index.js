@@ -142,27 +142,26 @@ var async = module.parent.require('async'),
 			feed.lastEntryDate = 0;
 		}
 
-		getFeedByGoogle(feed.url, feed.entriesToPull, function(err, entries) {
+		getFeedByYahoo(feed.url, feed.entriesToPull, function(err, entries) {
 			if (err) {
 				winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
 				return callback();
 			}
 
-			if(!Array.isArray(entries) || !entries.length) {
-				return callback();
-			}
+			var entries = Array.isArray(entries) ? entries : [entries];
 
 			feed.lastEntryDate = parseInt(feed.lastEntryDate, 10);
 
 			var mostRecent = feed.lastEntryDate;
 			var entryDate;
-			async.eachSeries(entries, function(entry, next) {
-				entryDate = new Date(entry.publishedDate).getTime();
+			async.eachSeries(entries, function(entryObj, next) {
+				var entry = entryObj.entry;
+				entryDate = new Date(entry.published).getTime();
 				if (entryDate > feed.lastEntryDate) {
 					if(entryDate > mostRecent) {
 						mostRecent = entryDate;
 					}
-					winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.publishedDate);
+					winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.published);
 					postEntry(feed, entry, next);
 				} else {
 					next();
@@ -193,7 +192,7 @@ var async = module.parent.require('async'),
 				tags = feed.tags.split(',');
 			}
 
-			var content = S(entry.content).stripTags('div', 'script', 'span').trim().s;
+			var content = S(entry.summary.content).stripTags('div', 'script', 'span').trim().s;
 
 			if (settings.collapseWhiteSpace) {
 				content = S(content).collapseWhitespace().s;
@@ -229,7 +228,7 @@ var async = module.parent.require('async'),
 		var postData = data.postData;
 		var tid = topicData.tid;
 		var pid = postData.pid;
-		var timestamp = new Date(entry.publishedDate).getTime();
+		var timestamp = new Date(entry.published).getTime();
 
 		db.setObjectField('topic:' + tid, 'timestamp', timestamp);
 		db.sortedSetsAdd([
@@ -246,15 +245,19 @@ var async = module.parent.require('async'),
 		], timestamp, pid);
 	}
 
-	function getFeedByGoogle(feedUrl, entriesToPull, callback) {
+	function getFeedByYahoo(feedUrl, entriesToPull, callback) {
 		entriesToPull = parseInt(entriesToPull, 10);
 		entriesToPull = entriesToPull ? entriesToPull : 4;
-		request('http://ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=' + entriesToPull + '&q=' + encodeURIComponent(feedUrl), function (err, response, body) {
+		var yql = encodeURIComponent('select entry FROM feednormalizer where url=\'' +
+			feedUrl + '\' AND output=\'atom_1.0\' | truncate(count=' + entriesToPull + ')');
+		request({
+			url: 'https://query.yahooapis.com/v1/public/yql?q=' + yql + '&format=json',
+			timeout: 120000
+		}, function (err, response, body) {
 			if (!err && response.statusCode === 200) {
 				try {
 					var p = JSON.parse(body);
-
-					callback(null, p.responseData.feed.entries);
+					callback(null, p.query.results.feed);
 				} catch (e) {
 					callback(e);
 				}
@@ -405,5 +408,3 @@ var async = module.parent.require('async'),
 	module.admin = admin;
 
 }(module.exports));
-
-
