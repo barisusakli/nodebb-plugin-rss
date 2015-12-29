@@ -263,7 +263,7 @@ var async = module.parent.require('async'),
 						callback(e);
 					}
 				} else {
-						callback(new Error('No new feed is returned'));
+					callback(new Error('No new feed is returned'));
 				}
 			} else {
 				callback(err);
