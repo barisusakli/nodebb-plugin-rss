@@ -255,11 +255,15 @@ var async = module.parent.require('async'),
 			timeout: 120000
 		}, function (err, response, body) {
 			if (!err && response.statusCode === 200) {
-				try {
-					var p = JSON.parse(body);
-					callback(null, p.query.results.feed);
-				} catch (e) {
-					callback(e);
+				if (p.count > 0) {
+					try {
+						var p = JSON.parse(body);
+						callback(null, p.query.results.feed);
+					} catch (e) {
+						callback(e);
+					}
+				} else {
+					callback(new Error('No new feed is returned'));
 				}
 			} else {
 				callback(err);
