@@ -148,7 +148,7 @@ var async = module.parent.require('async'),
 				return callback();
 			}
 
-			var entries = Array.isArray(entries) ? entries : [entries];
+			entries = Array.isArray(entries) ? entries : [entries];
 
 			feed.lastEntryDate = parseInt(feed.lastEntryDate, 10);
 
