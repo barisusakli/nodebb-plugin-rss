@@ -1,6 +1,6 @@
 {
   "name": "nodebb-plugin-rss",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "A RSS Plugin to pull feeds and post them in to categories",
   "main": "index.js",
   "scripts": {
@@ -19,6 +19,6 @@
     "string": "~1.7.0"
   },
   "nbbpm": {
-    "compatibility": "^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0"
+    "compatibility": "^0.6.0 || ^0.7.0 || ^0.8.0 || ^0.9.0 || ^1.0.0"
   }
 }
