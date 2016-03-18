@@ -257,7 +257,7 @@ var async = module.parent.require('async'),
 			if (!err && response.statusCode === 200) {
 				try {
 					var p = JSON.parse(body);
-					if (p.count > 0) {
+					if (p.query.count > 0) {
 						callback(null, p.query.results.feed);
 					} else {
 						callback(new Error('No new feed is returned'));
