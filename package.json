@@ -1,6 +1,6 @@
 {
   "name": "nodebb-plugin-rss",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "A RSS Plugin to pull feeds and post them in to categories",
   "main": "index.js",
   "scripts": {
