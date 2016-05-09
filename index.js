@@ -178,7 +178,7 @@ var async = module.parent.require('async'),
 	}
 
 	function postEntry(feed, entry, callback) {
-		if (!entry || !entry.summary || !entry.content) {
+		if (!entry || !entry.summary || !entry.summary.content) {
 			winston.warn('[nodebb-plugin-rss] invalid content for entry,  ' + feed.url);
 			return callback();
 		}
