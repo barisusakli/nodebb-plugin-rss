@@ -154,8 +154,12 @@ var async = module.parent.require('async'),
 
 			var mostRecent = feed.lastEntryDate;
 			var entryDate;
+			entries = entries.filter(Boolean);
 			async.eachSeries(entries, function(entryObj, next) {
 				var entry = entryObj.entry;
+				if (!entry) {
+					return next();
+				}
 				entryDate = new Date(entry.published).getTime();
 				if (entryDate > feed.lastEntryDate) {
 					if(entryDate > mostRecent) {
