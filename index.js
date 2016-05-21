@@ -208,7 +208,7 @@ var async = module.parent.require('async'),
 			}
 
 			content = toMarkdown(content);
-			var link = (entry.link && entry.link.href) ? ('\n\n' + entry.link.href) : '');
+			var link = (entry.link && entry.link.href) ? ('\n\n' + entry.link.href) : '';
 			var topicData = {
 				uid: uid,
 				title: entry.title,
