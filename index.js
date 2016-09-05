@@ -182,7 +182,7 @@ var async = module.parent.require('async'),
 	}
 
 	function postEntry(feed, entry, callback) {
-		if (!entry || (!entry.summary || !entry.summary.content) && (!entry.content || !entry.content.content)) {
+		if (!entry || (!entry.summary || !entry.summary.content) && (!entry.hasOwnProperty(content) ||  !entry.content || !entry.content.content)) {
 			winston.warn('[nodebb-plugin-rss] invalid content for entry,  ' + feed.url);
 			return callback();
 		}
@@ -202,7 +202,7 @@ var async = module.parent.require('async'),
 			}
 
 			var content = "";
-			if(entry.content.content) {
+			if(entry.hasOwnProperty(content) && entry.content.content) {
 				content = S(entry.content.content).stripTags('div', 'script', 'span').trim().s;
 			}
 			else {
