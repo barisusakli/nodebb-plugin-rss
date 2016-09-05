@@ -182,7 +182,7 @@ var async = module.parent.require('async'),
 	}
 
 	function postEntry(feed, entry, callback) {
-		if (!entry || !entry.summary || !entry.summary.content) {
+		if (!entry || (!entry.summary || !entry.summary.content) && (!entry.content || !entry.content.content)) {
 			winston.warn('[nodebb-plugin-rss] invalid content for entry,  ' + feed.url);
 			return callback();
 		}
@@ -201,7 +201,13 @@ var async = module.parent.require('async'),
 				tags = feed.tags.split(',');
 			}
 
-			var content = S(entry.summary.content).stripTags('div', 'script', 'span').trim().s;
+			var content = "";
+			if(entry.content.content) {
+				content = S(entry.content.content).stripTags('div', 'script', 'span').trim().s;
+			}
+			else {
+				content = S(entry.summary.content).stripTags('div', 'script', 'span').trim().s;
+			}
 
 			if (settings.collapseWhiteSpace) {
 				content = S(content).collapseWhitespace().s;
