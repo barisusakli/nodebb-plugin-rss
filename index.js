@@ -1,19 +1,19 @@
 'use strict';
 
-var async = module.parent.require('async'),
-	request = module.parent.require('request'),
-	winston = module.parent.require('winston'),
-	cron = require('cron').CronJob,
-	toMarkdown = require('to-markdown'),
-	S = require('string'),
+var async = module.parent.require('async');
+var request = module.parent.require('request');
+var winston = module.parent.require('winston');
+var cron = require('cron').CronJob;
+var toMarkdown = require('to-markdown');
+var S = require('string');
 
-	nconf = module.parent.require('nconf'),
-	meta = module.parent.require('./meta'),
-	pubsub = module.parent.require('./pubsub'),
-	topics = module.parent.require('./topics'),
-	db = module.parent.require('./database'),
-	user = module.parent.require('./user'),
-	plugins = module.parent.require('./plugins');
+var nconf = module.parent.require('nconf');
+var meta = module.parent.require('./meta');
+var pubsub = module.parent.require('./pubsub');
+var topics = module.parent.require('./topics');
+var db = module.parent.require('./database');
+var user = module.parent.require('./user');
+var plugins = module.parent.require('./plugins');
 
 
 (function(module) {
@@ -171,6 +171,10 @@ var async = module.parent.require('async'),
 					next();
 				}
 			}, function(err) {
+				if (err) {
+					winston.error(err);
+					return callback();
+				}
 				// only save lastEntryDate if it has changed
 				if (mostRecent > feed.lastEntryDate) {
 					db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent, callback);
