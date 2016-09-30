@@ -122,20 +122,22 @@
 		});
 
 		function enableAutoComplete(selector) {
-			selector.autocomplete({
-				source: function(request, response) {
-					socket.emit('admin.user.search', {query: request.term}, function(err, results) {
-						if (err) {
-							return app.alertError(err.message)
-						}
+			require(['jqueryui'], function() {
+				selector.autocomplete({
+					source: function(request, response) {
+						socket.emit('admin.user.search', {query: request.term}, function(err, results) {
+							if (err) {
+								return app.alertError(err.message)
+							}
 
-						if (results && results.users) {
-							var users = results.users.map(function(user) { return user.username });
-							response(users);
-							$('.ui-autocomplete a').attr('href', '#');
-						}
-					});
-				}
+							if (results && results.users) {
+								var users = results.users.map(function(user) { return user.username });
+								response(users);
+								$('.ui-autocomplete a').attr('href', '#');
+							}
+						});
+					}
+				});
 			});
 		}
 
