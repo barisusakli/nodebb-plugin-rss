@@ -186,7 +186,7 @@ var plugins = module.parent.require('./plugins');
 	}
 
 	function postEntry(feed, entry, callback) {
-		if (!entry || (!entry.summary || !entry.summary.content) && (!entry.hasOwnProperty(content) ||  !entry.content || !entry.content.content)) {
+		if (!entry || (!entry.summary || !entry.summary.content) && (!entry.hasOwnProperty('content') || !entry.content || !entry.content.content)) {
 			winston.warn('[nodebb-plugin-rss] invalid content for entry,  ' + feed.url);
 			return callback();
 		}
