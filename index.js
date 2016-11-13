@@ -205,11 +205,10 @@ var plugins = module.parent.require('./plugins');
 				tags = feed.tags.split(',');
 			}
 
-			var content = "";
-			if(entry.hasOwnProperty(content) && entry.content.content) {
+			var content = '';
+			if (entry.hasOwnProperty('content') && entry.content.content) {
 				content = S(entry.content.content).stripTags('div', 'script', 'span').trim().s;
-			}
-			else {
+			} else {
 				content = S(entry.summary.content).stripTags('div', 'script', 'span').trim().s;
 			}
 
