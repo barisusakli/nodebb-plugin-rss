@@ -401,20 +401,20 @@ var plugins = module.parent.require('./plugins');
 		settings = newSettings;
 	});
 
-	admin.activate = function(id) {
-		if (id === 'nodebb-plugin-rss') {
+	admin.activate = function(data) {
+		if (data.id === 'nodebb-plugin-rss') {
 			pubsub.publish('nodebb-plugin-rss:activate');
 		}
 	};
 
-	admin.deactivate = function(id) {
-		if (id === 'nodebb-plugin-rss') {
+	admin.deactivate = function(data) {
+		if (data.id === 'nodebb-plugin-rss') {
 			pubsub.publish('nodebb-plugin-rss:deactivate');
 		}
 	};
 
-	admin.uninstall = function(id) {
-		if (id === 'nodebb-plugin-rss') {
+	admin.uninstall = function(data) {
+		if (data.id === 'nodebb-plugin-rss') {
 			deleteFeeds();
 			deleteSettings();
 		}
