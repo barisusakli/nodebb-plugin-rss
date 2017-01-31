@@ -389,10 +389,6 @@ var plugins = module.parent.require('./plugins');
 		db.delete('nodebb-plugin-rss:settings', callback);
 	}
 
-	pubsub.on('nodebb-plugin-rss:activate', function() {
-		reStartCronJobs();
-	});
-
 	pubsub.on('nodebb-plugin-rss:deactivate', function() {
 		stopCronJobs();
 	});
@@ -400,12 +396,6 @@ var plugins = module.parent.require('./plugins');
 	pubsub.on('nodebb-plugin-rss:settings', function(newSettings) {
 		settings = newSettings;
 	});
-
-	admin.activate = function(data) {
-		if (data.id === 'nodebb-plugin-rss') {
-			pubsub.publish('nodebb-plugin-rss:activate');
-		}
-	};
 
 	admin.deactivate = function(data) {
 		if (data.id === 'nodebb-plugin-rss') {
