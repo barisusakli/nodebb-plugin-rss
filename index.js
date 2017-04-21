@@ -206,9 +206,9 @@ function postEntry(feed, entry, callback) {
 
 		var content = '';
 		if (entry.hasOwnProperty('content') && entry.content.content) {
-			content = S(entry.content.content).stripTags('div', 'script', 'span').trim().s;
+			content = S(entry.content.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
 		} else {
-			content = S(entry.summary.content).stripTags('div', 'script', 'span').trim().s;
+			content = S(entry.summary.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
 		}
 
 		if (settings.collapseWhiteSpace) {
