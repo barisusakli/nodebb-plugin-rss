@@ -20,10 +20,23 @@ var rssPlugin = module.exports;
 var cronJobs = [];
 var settings = {};
 
-cronJobs.push(new cron('* * * * *', function() { pullFeedsInterval(1); }, null, false));
-cronJobs.push(new cron('0 * * * *', function() { pullFeedsInterval(60); }, null, false));
-cronJobs.push(new cron('0 0/12 * * *', function() { pullFeedsInterval(60 * 12); }, null, false));
-cronJobs.push(new cron('0 0 * * *', function() { pullFeedsInterval(60 * 24); }, null, false));
+// minute
+cronJobs.push(new cron('0 * * * * *', function() { pullFeedsInterval(1); }, null, false));
+
+// hour
+cronJobs.push(new cron('0 0 * * * *', function() { pullFeedsInterval(60); }, null, false));
+
+// 12 hours
+cronJobs.push(new cron('0 0 0/12 * * *', function() { pullFeedsInterval(60 * 12); }, null, false));
+
+// 24 hours
+cronJobs.push(new cron('0 0 0 * * *', function() { pullFeedsInterval(60 * 24); }, null, false));
+
+// 48 hours
+cronJobs.push(new cron('0 0 0 */2 * *', function() { pullFeedsInterval(60 * 24 * 2); }, null, false));
+
+// one week
+cronJobs.push(new cron('0 0 0 0 0 6', function() { pullFeedsInterval(60 * 24 * 7); }, null, false));
 
 plugins.isActive('nodebb-plugin-rss', function(err, active) {
 	if (err) {
@@ -215,12 +228,18 @@ function postEntry(feed, entry, callback) {
 			content = S(content).collapseWhitespace().s;
 		}
 
-		content = toMarkdown(content);
-		var link = (entry.link && entry.link.href) ? ('\n\n' + entry.link.href) : '';
+		var link = (entry.link && entry.link.href) ? ('<br/><br/>' + entry.link.href) : '';
+
+		if (settings.convertToMarkdown) {
+			content = toMarkdown(content + link);
+		} else {
+			content = content + link;
+		}
+
 		var topicData = {
 			uid: uid,
 			title: entry.title,
-			content: content + link,
+			content: content,
 			cid: feed.category,
 			tags: tags
 		};
@@ -331,13 +350,19 @@ admin.getSettings = function(callback) {
 		}
 		settings = settings || {};
 
+		if (!settings.hasOwnProperty('convertToMarkdown')) {
+			settings.convertToMarkdown = 1;
+		}
+
 		settings.collapseWhiteSpace = parseInt(settings.collapseWhiteSpace, 10) === 1;
+		settings.convertToMarkdown = parseInt(settings.convertToMarkdown, 10) === 1;
 		callback(null, settings);
 	});
 };
 
 admin.saveSettings = function(data, callback) {
 	settings.collapseWhiteSpace = data.collapseWhiteSpace;
+	settings.convertToMarkdown = data.convertToMarkdown;
 	db.setObject('nodebb-plugin-rss:settings', settings, function(err) {
 		if (err) {
 			return callback(err);
@@ -349,7 +374,7 @@ admin.saveSettings = function(data, callback) {
 
 function saveFeeds(feeds, callback) {
 	async.each(feeds, function saveFeed(feed, next) {
-		if(!feed.url) {
+		if (!feed.url) {
 			return next();
 		}
 		async.parallel([

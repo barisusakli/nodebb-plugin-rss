@@ -35,10 +35,12 @@
 			<div class="form-group">
 				<label>Interval</label>
 				<select class="form-control feed-interval" data-interval="{feeds.interval}">
+					<option value="1">1 Minute</option>
 					<option value="60">1 Hour</option>
 					<option value="720">12 Hours</option>
 					<option value="1440">24 Hours</option>
-					<option value="1">1 Minute</option>
+					<option value="2880">48 Hours</option>
+					<option value="10080">1 week</option>
 				</select>
 			</div>
 		</div>
