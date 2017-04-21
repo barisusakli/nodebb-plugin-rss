@@ -10,7 +10,8 @@
         { "hook": "filter:plugins.clearRequireCache", "method": "onClearRequireCache"},
 
         { "hook": "action:plugin.deactivate", "method": "admin.deactivate" },
-        { "hook": "action:plugin.uninstall", "method": "admin.uninstall"}
+        { "hook": "action:plugin.uninstall", "method": "admin.uninstall"},
+        { "hook": "action:topic.purge", "method": "onTopicPurge"}
     ],
     "templates": "./public/templates"
 }

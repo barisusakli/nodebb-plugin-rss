@@ -64,6 +64,24 @@ rssPlugin.init = function(params, callback) {
 	callback();
 };
 
+rssPlugin.onTopicPurge = function(data) {
+	async.waterfall([
+		function (next) {
+			db.getSetMembers('nodebb-plugin-rss:feeds', next);
+		},
+		function (feedUrls, next) {
+			var keys = feedUrls.map(function(url) {
+				return 'nodebb-plugin-rss:feed:' + url + ':uuid';
+			});
+			db.sortedSetsRemoveRangeByScore(keys, data.topic.tid, data.topic.tid, next);
+		}
+	], function (err) {
+		if (err) {
+			return winston.error(err);
+		}
+	});
+};
+
 function renderAdmin(req, res, next) {
 	async.parallel({
 		feeds: function(next) {
@@ -174,12 +192,24 @@ function pullFeed(feed, callback) {
 			}
 			entryDate = new Date(entry.published).getTime();
 			if (entryDate > feed.lastEntryDate) {
-				if(entryDate > mostRecent) {
+				if (entryDate > mostRecent) {
 					mostRecent = entryDate;
 				}
-				winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.published);
-				postEntry(feed, entry, next);
+				isEntryNew(feed, entry, function (err, isNew) {
+					if (err) {
+						winston.error(err);
+						return next();
+					}
+					if (!isNew) {
+						winston.info('[plugin-rss] entry is not new, id: ' + entry.id + ', title: ' + entry.title + ', link: ' + (entry.link && entry.link.href));
+						return next();
+					}
+					winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.published);
+					postEntry(feed, entry, next);
+				});
+
 			} else {
+				winston.info('[plugin-rss] skipping entry because its old ', entryDate, feed.lastEntryDate);
 				next();
 			}
 		}, function(err) {
@@ -197,65 +227,87 @@ function pullFeed(feed, callback) {
 	});
 }
 
+function isEntryNew(feed, entry, callback) {
+	var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
+	db.isSortedSetMember('nodebb-plugin-rss:feed:' + feed.url + ':uuid', uuid, callback);
+}
+
 function postEntry(feed, entry, callback) {
 	if (!entry || (!entry.summary || !entry.summary.content) && (!entry.hasOwnProperty('content') || !entry.content || !entry.content.content)) {
 		winston.warn('[nodebb-plugin-rss] invalid content for entry,  ' + feed.url);
 		return callback();
 	}
 
-	user.getUidByUsername(feed.username, function(err, uid) {
-		if (err) {
-			return callback(err);
-		}
+	var posterUid;
+	var topicData;
 
-		if(!uid) {
-			uid = 1;
-		}
-
-		var tags = [];
-		if (feed.tags) {
-			tags = feed.tags.split(',');
-		}
-
-		var content = '';
-		if (entry.hasOwnProperty('content') && entry.content.content) {
-			content = S(entry.content.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
-		} else {
-			content = S(entry.summary.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
-		}
-
-		if (settings.collapseWhiteSpace) {
-			content = S(content).collapseWhitespace().s;
-		}
-
-		var link = (entry.link && entry.link.href) ? ('<br/><br/>' + entry.link.href) : '';
-
-		if (settings.convertToMarkdown) {
-			content = toMarkdown(content + link);
-		} else {
-			content = content + link;
-		}
-
-		var topicData = {
-			uid: uid,
-			title: entry.title,
-			content: content,
-			cid: feed.category,
-			tags: tags
-		};
-
-		topics.post(topicData, function(err, result) {
-			if (err) {
-				winston.error(err.message);
-				return callback();
+	async.waterfall([
+		function (next) {
+			user.getUidByUsername(feed.username, next);
+		},
+		function (uid, next) {
+			posterUid = uid;
+			if (!posterUid) {
+				posterUid = 1;
+			}
+			var tags = [];
+			if (feed.tags) {
+				tags = feed.tags.split(',');
 			}
 
+			// use tags from feed if there are any
+			if (Array.isArray(entry.category)) {
+				var entryTags = entry.category.map(function(data) {
+					return data && data.term;
+				}).filter(Boolean);
+				tags = tags.concat(entryTags);
+			}
+
+			var content = '';
+			if (entry.hasOwnProperty('content') && entry.content.content) {
+				content = S(entry.content.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
+			} else {
+				content = S(entry.summary.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
+			}
+
+			if (settings.collapseWhiteSpace) {
+				content = S(content).collapseWhitespace().s;
+			}
+
+			var link = (entry.link && entry.link.href) ? ('<br/><br/>' + entry.link.href) : '';
+
+			if (settings.convertToMarkdown) {
+				content = toMarkdown(content + link);
+			} else {
+				content = content + link;
+			}
+
+			topics.post({
+				uid: posterUid,
+				title: entry.title,
+				content: content,
+				cid: feed.category,
+				tags: tags
+			}, next);
+		},
+		function (result, next) {
+			topicData = result.topicData;
 			if (feed.timestamp === 'feed') {
 				setTimestampToFeedPublishedDate(result, entry);
 			}
 			var max = Math.max(parseInt(meta.config.postDelay, 10) || 10, parseInt(meta.config.newbiePostDelay, 10) || 10) + 1;
-			user.setUserField(uid, 'lastposttime', Date.now() - max * 1000, callback);
-		});
+
+			user.setUserField(posterUid, 'lastposttime', Date.now() - max * 1000, next);
+		},
+		function (next) {
+			var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
+			db.sortedSetAdd('nodebb-plugin-rss:feed:' + feed.url + ':uuid', topicData.tid, uuid, next);
+		}
+	], function (err) {
+		if (err) {
+			winston.error(err);
+		}
+		callback();
 	});
 }
 
