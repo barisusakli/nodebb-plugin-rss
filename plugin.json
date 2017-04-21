@@ -12,5 +12,8 @@
         { "hook": "action:plugin.deactivate", "method": "admin.deactivate" },
         { "hook": "action:plugin.uninstall", "method": "admin.uninstall"}
     ],
+    "acpScripts": [
+        "lib/admin.js"
+    ],
     "templates": "./public/templates"
 }
