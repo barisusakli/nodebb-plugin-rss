@@ -168,9 +168,6 @@ function pullFeed(feed, callback) {
 	if (!feed) {
 		return callback();
 	}
-	if (!feed.lastEntryDate) {
-		feed.lastEntryDate = 0;
-	}
 
 	getFeedByYahoo(feed.url, feed.entriesToPull, function(err, entries) {
 		if (err) {
@@ -180,49 +177,30 @@ function pullFeed(feed, callback) {
 
 		entries = Array.isArray(entries) ? entries : [entries];
 
-		feed.lastEntryDate = parseInt(feed.lastEntryDate, 10);
-
-		var mostRecent = feed.lastEntryDate;
-		var entryDate;
 		entries = entries.filter(Boolean);
 		async.eachSeries(entries, function(entryObj, next) {
 			var entry = entryObj.entry;
 			if (!entry) {
 				return next();
 			}
-			entryDate = new Date(entry.published).getTime();
-			if (entryDate > feed.lastEntryDate) {
-				if (entryDate > mostRecent) {
-					mostRecent = entryDate;
-				}
-				isEntryNew(feed, entry, function (err, isNew) {
-					if (err) {
-						winston.error(err);
-						return next();
-					}
-					if (!isNew) {
-						winston.info('[plugin-rss] entry is not new, id: ' + entry.id + ', title: ' + entry.title + ', link: ' + (entry.link && entry.link.href));
-						return next();
-					}
-					winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.published);
-					postEntry(feed, entry, next);
-				});
 
-			} else {
-				winston.info('[plugin-rss] skipping entry because its old ', entryDate, feed.lastEntryDate);
-				next();
-			}
+			isEntryNew(feed, entry, function (err, isNew) {
+				if (err) {
+					winston.error(err);
+					return next();
+				}
+				if (!isNew) {
+					winston.info('[plugin-rss] entry is not new, id: ' + entry.id + ', title: ' + entry.title + ', link: ' + (entry.link && entry.link.href));
+					return next();
+				}
+				winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.published);
+				postEntry(feed, entry, next);
+			});
 		}, function(err) {
 			if (err) {
 				winston.error(err);
-				return callback();
 			}
-			// only save lastEntryDate if it has changed
-			if (mostRecent > feed.lastEntryDate) {
-				db.setObjectField('nodebb-plugin-rss:feed:' + feed.url, 'lastEntryDate', mostRecent, callback);
-			} else {
-				callback();
-			}
+			callback();
 		});
 	});
 }
