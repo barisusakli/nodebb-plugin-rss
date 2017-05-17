@@ -207,7 +207,9 @@ function pullFeed(feed, callback) {
 
 function isEntryNew(feed, entry, callback) {
 	var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
-	db.isSortedSetMember('nodebb-plugin-rss:feed:' + feed.url + ':uuid', uuid, callback);
+	db.isSortedSetMember('nodebb-plugin-rss:feed:' + feed.url + ':uuid', uuid, function (err, isMember) {
+		callback(err, !isMember);
+	});
 }
 
 function postEntry(feed, entry, callback) {
