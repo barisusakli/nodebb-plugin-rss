@@ -138,7 +138,7 @@ function checkFeed(req, res) {
 
 		entries = entries.map(function (entry) {
 			var entryData = entry.entry || {};
-			if (!entryData.title) {
+			if (!entryData.title || (typeof entryData.title !== 'string' && !entryData.title.content)) {
 				entryData.title = 'ERROR: title is missing';
 			}
 
@@ -278,6 +278,10 @@ function postEntry(feed, entry, callback) {
 		return callback();
 	}
 
+	if (!entry.title || (typeof entry.title !== 'string' && !entry.title.content)) {
+		winston.warn('[nodebb-plugin-rss] invalid title for entry, ' + feed.url);
+	}
+
 	var posterUid;
 	var topicData;
 
@@ -303,6 +307,8 @@ function postEntry(feed, entry, callback) {
 				tags = tags.concat(entryTags);
 			}
 
+			var title = entry.title && entry.title.content ? entry.title.content : entry.title;
+
 			var content = '';
 			if (entry.hasOwnProperty('content') && entry.content.content) {
 				content = S(entry.content.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
@@ -324,7 +330,7 @@ function postEntry(feed, entry, callback) {
 
 			topics.post({
 				uid: posterUid,
-				title: entry.title,
+				title: title,
 				content: content,
 				cid: feed.category,
 				tags: tags
