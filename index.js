@@ -60,6 +60,7 @@ rssPlugin.init = function(params, callback) {
 	params.router.get('/api/admin/plugins/rss', params.middleware.applyCSRF, renderAdmin);
 
 	params.router.post('/api/admin/plugins/rss/save', params.middleware.applyCSRF, save);
+	params.router.get('/api/admin/plugins/rss/checkFeed', checkFeed);
 
 	callback();
 };
@@ -126,6 +127,67 @@ function save(req, res, next) {
 	});
 }
 
+function checkFeed(req, res) {
+	if (!req.query.url) {
+		return res.json('Please enter feed url!');
+	}
+	getFeedByYahoo(req.query.url, 1, function(err, entries) {
+		if (err) {
+			return res.json(err.message);
+		}
+
+		entries = entries.map(function (entry) {
+			var entryData = entry.entry || {};
+			if (!entryData.title) {
+				entryData.title = 'ERROR: title is missing';
+			}
+
+			if (!entryData.content || !entryData.content.content) {
+				entryData.content = {
+					content: 'ERROR: content is missing!'
+				};
+			}
+
+			if (!entryData.summary || !entryData.summary.content) {
+				entryData.summary = {
+					content: 'ERROR: summary is missing!'
+				};
+			}
+
+			if (!entryData.published) {
+				entryData.published = 'ERROR: published field is missing!';
+			}
+
+			if (!entryData.link && !entryData.link.href) {
+				entryData.link = {
+					href: 'ERROR: link is missing!',
+				};
+			}
+
+			if (!entryData.id) {
+				entryData.id = 'ERROR: id is missing';
+			}
+
+			if (Array.isArray(entryData.category)) {
+				entryData.tags = entryData.category.map(function (category) {
+					return category && category.term;
+				});
+				delete entryData.category;
+			}
+			delete entryData.commentRss;
+			delete entryData.comments;
+			delete entryData.author;
+			delete entryData.creator;
+			delete entryData.updated;
+			delete entryData.date;
+			entry.entry = entryData;
+			return entry;
+		});
+
+		res.json(entries);
+	});
+}
+
 function reStartCronJobs() {
 	if (nconf.get('isPrimary') === 'true') {
 		stopCronJobs();
@@ -175,8 +237,6 @@ function pullFeed(feed, callback) {
 			return callback();
 		}
 
-		entries = Array.isArray(entries) ? entries : [entries];
-
 		entries = entries.filter(Boolean);
 		async.eachSeries(entries, function(entryObj, next) {
 			var entry = entryObj.entry;
@@ -213,7 +273,7 @@ function isEntryNew(feed, entry, callback) {
 }
 
 function postEntry(feed, entry, callback) {
-	if (!entry || (!entry.summary || !entry.summary.content) && (!entry.hasOwnProperty('content') || !entry.content || !entry.content.content)) {
+	if (!entry || ((!entry.summary || !entry.summary.content) && (!entry.hasOwnProperty('content') || !entry.content || !entry.content.content))) {
 		winston.warn('[nodebb-plugin-rss] invalid content for entry,  ' + feed.url);
 		return callback();
 	}
@@ -326,7 +386,7 @@ function getFeedByYahoo(feedUrl, entriesToPull, callback) {
 			try {
 				var p = JSON.parse(body);
 				if (p.query.count > 0) {
-					callback(null, p.query.results.feed);
+					callback(null, Array.isArray(p.query.results.feed) ? p.query.results.feed : [p.query.results.feed]);
 				} else {
 					callback(new Error('No new feed is returned'));
 				}
