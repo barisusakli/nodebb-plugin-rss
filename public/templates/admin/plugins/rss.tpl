@@ -95,7 +95,13 @@ $(document).ready(function() {
 	});
 
 	$('.feeds').on('click', '.remove', function() {
-		$(this).parents('.feed').remove();
+		var self = $(this);
+		bootbox.confirm('Do you really want to remove this feed?', function (confirm) {
+			if (confirm) {
+				self.parents('.feed').remove();
+			}
+		});
+
 		return false;
 	});
 
