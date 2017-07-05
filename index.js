@@ -106,10 +106,6 @@ function save(req, res, next) {
 			return next(err);
 		}
 
-		if (!req.body.feeds) {
-			return res.json({message:'Feeds saved!'});
-		}
-
 		async.parallel([
 			function(next) {
 				saveFeeds(req.body.feeds, next);
@@ -118,7 +114,7 @@ function save(req, res, next) {
 				admin.saveSettings(req.body.settings, next);
 			}
 		], function(err) {
-			if(err) {
+			if (err) {
 				return next(err);
 			}
 
@@ -174,6 +170,9 @@ function checkFeed(req, res) {
 				});
 				delete entryData.category;
 			}
+
+			entryData.modifiedContent = modifyContent(entryData);
+
 			delete entryData.commentRss;
 			delete entryData.comments;
 			delete entryData.author;
@@ -309,24 +308,7 @@ function postEntry(feed, entry, callback) {
 
 			var title = entry.title && entry.title.content ? entry.title.content : entry.title;
 
-			var content = '';
-			if (entry.hasOwnProperty('content') && entry.content.content) {
-				content = S(entry.content.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
-			} else {
-				content = S(entry.summary.content).stripTags('div', 'script', 'span', 'iframe').trim().s;
-			}
-
-			if (settings.collapseWhiteSpace) {
-				content = S(content).collapseWhitespace().s;
-			}
-
-			var link = (entry.link && entry.link.href) ? ('<br/><br/>' + entry.link.href) : '';
-
-			if (settings.convertToMarkdown) {
-				content = toMarkdown(content + link);
-			} else {
-				content = content + link;
-			}
+			var content = modifyContent(entry);
 
 			topics.post({
 				uid: posterUid,
@@ -355,6 +337,37 @@ function postEntry(feed, entry, callback) {
 		}
 		callback();
 	});
+}
+
+function modifyContent(entry) {
+	var content = '';
+	if (entry.hasOwnProperty('content') && entry.content.content) {
+		content = entry.content.content;
+	} else if (entry.hasOwnProperty('summary') && entry.summary.content) {
+		content = entry.summary.content;
+	}
+
+	if (content) {
+		content = S(content).stripTags('div', 'script', 'span', 'iframe').trim().s;
+	}
+
+	if (settings.collapseWhiteSpace) {
+		content = S(content).collapseWhitespace().s;
+	}
+
+	var link = (entry.link && entry.link.href) ? ('<br/><br/>' + entry.link.href) : '';
+
+	var toMarkdownOptions = {};
+	if (settings.useGFM) {
+		toMarkdownOptions.gfm = true;
+	}
+
+	if (settings.convertToMarkdown) {
+		content = toMarkdown(content + link, toMarkdownOptions);
+	} else {
+		content = content + link;
+	}
+	return content;
 }
 
 function setTimestampToFeedPublishedDate(data, entry) {
@@ -454,13 +467,15 @@ admin.getSettings = function(callback) {
 
 		settings.collapseWhiteSpace = parseInt(settings.collapseWhiteSpace, 10) === 1;
 		settings.convertToMarkdown = parseInt(settings.convertToMarkdown, 10) === 1;
+		settings.useGFM = parseInt(settings.useGFM, 10) === 1;
 		callback(null, settings);
 	});
 };
 
 admin.saveSettings = function(data, callback) {
-	settings.collapseWhiteSpace = data.collapseWhiteSpace;
-	settings.convertToMarkdown = data.convertToMarkdown;
+	settings.collapseWhiteSpace = parseInt(data.collapseWhiteSpace, 10) === 1;
+	settings.convertToMarkdown = parseInt(data.convertToMarkdown, 10) === 1;
+	settings.useGFM = parseInt(data.useGFM, 10) === 1;
 	db.setObject('nodebb-plugin-rss:settings', settings, function(err) {
 		if (err) {
 			return callback(err);

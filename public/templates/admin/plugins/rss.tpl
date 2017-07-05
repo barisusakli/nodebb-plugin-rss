@@ -17,6 +17,12 @@
 
 	<div class="checkbox">
 		<label>
+			<input id="useGFM" type="checkbox" <!-- IF settings.useGFM -->checked<!-- ENDIF settings.useGFM -->> Use Github Flavored Markdown
+		</label>
+	</div>
+
+	<div class="checkbox">
+		<label>
 			<input id="collapseWhiteSpace" type="checkbox" <!-- IF settings.collapseWhiteSpace -->checked<!-- ENDIF settings.collapseWhiteSpace -->> Collapse Whitespace
 		</label>
 	</div>
@@ -29,6 +35,7 @@
 	<input id="test-feed-input" type="text" class="form-control" /><br/>
 	<button id="checkFeed" class="btn">Check</button><br/><br/>
 	<pre id="test-result" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap;"></pre>
+	<div id="rendered-content"></div>
 </div>
 
 <input id="csrf_token" type="hidden" value="{csrf}" />
@@ -133,6 +140,7 @@ $(document).ready(function() {
 			settings: {
 				collapseWhiteSpace: $('#collapseWhiteSpace').prop('checked') ? 1 : 0,
 				convertToMarkdown: $('#convertToMarkdown').prop('checked') ? 1 : 0,
+				useGFM: $('#useGFM').prop('checked') ? 1 : 0,
 			}
 		}, function(data) {
 			app.alert({
@@ -182,6 +190,7 @@ $(document).ready(function() {
 		}, function(data) {
 			console.log(data);
 			$('#test-result').text(JSON.stringify(data, null, 4));
+			$('#rendered-content').html(data.rendered);
 		});
 		return false;
 	});
