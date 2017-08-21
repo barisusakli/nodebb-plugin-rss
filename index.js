@@ -415,20 +415,36 @@ function fixTables(content) {
 
 	$('table').each(function (index, el) {
 		var myTable = $(el);
+		// remove all p tags
 		myTable.find('p').each(function() {
 			$(this).replaceWith($(this).html());
 		});
 		var thead = myTable.find('thead');
 		var tbody = myTable.find('tbody');
 
-		if (thead.length === 0 && tbody.length) {
-			var firstRow = tbody.find('tr').first();
+		var thRows = myTable.find('tr:has(th)');
+		var tdRows = myTable.find('tr:has(td)');
 
-			thead = $('<thead>'+ firstRow.html() + '</thead>').prependTo(myTable);
-			firstRow.remove();
+		if (thead.length === 0) {  //if there is no thead element, add one.
+			thead = $('<thead></thead>').prependTo(myTable);
+		}
+
+		if (tbody.length === 0) {  //if there is no tbody element, add one.
+			tbody = $('<tbody></tbody>').appendTo(myTable);
+		}
+
+		thRows.clone(true).appendTo(thead);
+		thRows.remove();
+
+		tdRows.clone(true).appendTo(tbody);
+		tdRows.remove();
+
+		// if thead does not have a tr take the first tr from tbody
+		if (thead.find('tr').length === 0 && tbody.find('tr').length) {
+			var firstRow = tbody.find('tr').first();
+			firstRow.appendTo(thead);
 		}
 	});
-
 	return $('body').html();
 }
 
