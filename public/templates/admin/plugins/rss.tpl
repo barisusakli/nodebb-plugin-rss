@@ -35,7 +35,14 @@
 	<input id="test-feed-input" type="text" class="form-control" /><br/>
 	<button id="checkFeed" class="btn">Check</button><br/><br/>
 	<pre id="test-result" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap;"></pre>
-	<div id="rendered-content"></div>
+	<div id="rendered-content" class="well"></div>
+
+	<div class="hidden">
+		<hr/>
+		<textarea rows="10" id="sampleHTML" class="form-control"></textarea>
+		<button id="parseHTML" class="btn">convert html to markdown</button>
+		<pre id="parsedHTML" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap;"></pre>
+	</div>
 </div>
 
 <input id="csrf_token" type="hidden" value="{csrf}" />
@@ -185,12 +192,27 @@ $(document).ready(function() {
 	enableTagsInput($('.feeds .feed-tags'));
 
 	$('#checkFeed').on('click', function () {
+		$('#test-result').text('');
+		$('#rendered-content').html('');
 		$.get(config.relative_path + '/api/admin/plugins/rss/checkFeed', {
 			url: $('#test-feed-input').val(),
 		}, function(data) {
 			console.log(data);
 			$('#test-result').text(JSON.stringify(data, null, 4));
-			$('#rendered-content').html(data.rendered);
+			data.forEach(function (entry) {
+				$('#rendered-content').append(entry.entry.rendered);
+			})
+
+		});
+		return false;
+	});
+
+	$('#parseHTML').on('click', function () {
+		$.post(config.relative_path + '/api/admin/plugins/rss/parseHTML', {
+			html: $('#sampleHTML').val(),
+			_csrf: $('#csrf_token').val(),
+		}, function(data) {
+			$('#parsedHTML').html(data);
 		});
 		return false;
 	});

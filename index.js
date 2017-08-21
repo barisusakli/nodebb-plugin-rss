@@ -1,6 +1,7 @@
 'use strict';
 
 var async = require('async');
+var cheerio = require('cheerio');
 var request = module.parent.require('request');
 var winston = module.parent.require('winston');
 var cron = require('cron').CronJob;
@@ -18,7 +19,6 @@ var plugins = module.parent.require('./plugins');
 var rssPlugin = module.exports;
 
 var cronJobs = [];
-var settings = {};
 
 // minute
 cronJobs.push(new cron('0 * * * * *', function() { pullFeedsInterval(1); }, null, false));
@@ -61,6 +61,23 @@ rssPlugin.init = function(params, callback) {
 
 	params.router.post('/api/admin/plugins/rss/save', params.middleware.applyCSRF, save);
 	params.router.get('/api/admin/plugins/rss/checkFeed', checkFeed);
+
+	params.router.post('/api/admin/plugins/rss/parseHTML', params.middleware.applyCSRF, function (req, res, next) {
+		admin.getSettings(function (err, settings) {
+			if (err) {
+				return next(err);
+			}
+			var content = modifyContent({
+				content: {
+					content: req.body.html,
+				},
+				link: {
+					href: "https://community.nodebb.org",
+				}
+			}, settings);
+			res.send(content);
+		});
+	});
 
 	callback();
 };
@@ -127,10 +144,16 @@ function checkFeed(req, res) {
 	if (!req.query.url) {
 		return res.json('Please enter feed url!');
 	}
-	getFeedByYahoo(req.query.url, 1, function(err, entries) {
+	async.parallel({
+		settings: admin.getSettings,
+		entries: function (next) {
+			getFeedByYahoo(req.query.url, 1, next);
+		},
+	}, function (err, results) {
 		if (err) {
 			return res.json(err.message);
 		}
+		var entries = results.entries;
 
 		entries = entries.map(function (entry) {
 			var entryData = entry.entry || {};
@@ -138,16 +161,8 @@ function checkFeed(req, res) {
 				entryData.title = 'ERROR: title is missing';
 			}
 
-			if (!entryData.content || !entryData.content.content) {
-				entryData.content = {
-					content: 'ERROR: content is missing!'
-				};
-			}
-
-			if (!entryData.summary || !entryData.summary.content) {
-				entryData.summary = {
-					content: 'ERROR: summary is missing!'
-				};
+			if ((!entryData.content || !entryData.content.content) && (!entryData.summary || !entryData.summary.content)) {
+				entryData.error = 'ERROR: content/summary is missing!'
 			}
 
 			if (!entryData.published) {
@@ -171,7 +186,7 @@ function checkFeed(req, res) {
 				delete entryData.category;
 			}
 
-			entryData.modifiedContent = modifyContent(entryData);
+			entryData.modifiedContent = modifyContent(entryData, results.settings);
 
 			delete entryData.commentRss;
 			delete entryData.comments;
@@ -183,7 +198,21 @@ function checkFeed(req, res) {
 			return entry;
 		});
 
-		res.json(entries);
+		async.each(entries, function (entryData, next) {
+			plugins.fireHook('filter:parse.raw', entryData.entry.modifiedContent, function (err, parsed) {
+				if (err) {
+					return next(err);
+				}
+
+				entryData.entry.rendered = parsed;
+				next();
+			});
+		}, function (err) {
+			if (err){
+				return next(err);
+			}
+			res.json(entries);
+		});
 	});
 }
 
@@ -205,27 +234,37 @@ function stopCronJobs() {
 }
 
 function pullFeedsInterval(interval) {
-	admin.getFeeds(function(err, feeds) {
-		if (err || !Array.isArray(feeds)) {
+	async.parallel({
+		settings: admin.getSettings,
+		feeds: admin.getFeeds,
+	}, function (err, results) {
+		if (err) {
+			winston.error(err);
+		}
+		if(!Array.isArray(results.feeds)) {
 			return;
 		}
-		feeds = feeds.filter(function(item) {
+		results.feeds = results.feeds.filter(function(item) {
 			return item && parseInt(item.interval, 10) === interval;
 		});
-
-		pullFeeds(feeds);
+		if (!results.feeds.length) {
+			return;
+		}
+		pullFeeds(results.feeds, results.settings);
 	});
 }
 
-function pullFeeds(feeds) {
-	async.eachSeries(feeds, pullFeed, function(err) {
+function pullFeeds(feeds, settings) {
+	async.eachSeries(feeds, function (feed, next) {
+		pullFeed(feed, settings, next);
+	}, function(err) {
 		if (err) {
 			winston.error(err.message);
 		}
 	});
 }
 
-function pullFeed(feed, callback) {
+function pullFeed(feed, settings, callback) {
 	if (!feed) {
 		return callback();
 	}
@@ -253,7 +292,7 @@ function pullFeed(feed, callback) {
 					return next();
 				}
 				winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.published);
-				postEntry(feed, entry, next);
+				postEntry(feed, entry, settings, next);
 			});
 		}, function(err) {
 			if (err) {
@@ -271,7 +310,7 @@ function isEntryNew(feed, entry, callback) {
 	});
 }
 
-function postEntry(feed, entry, callback) {
+function postEntry(feed, entry, settings, callback) {
 	if (!entry || ((!entry.summary || !entry.summary.content) && (!entry.hasOwnProperty('content') || !entry.content || !entry.content.content))) {
 		winston.warn('[nodebb-plugin-rss] invalid content for entry,  ' + feed.url);
 		return callback();
@@ -308,7 +347,7 @@ function postEntry(feed, entry, callback) {
 
 			var title = entry.title && entry.title.content ? entry.title.content : entry.title;
 
-			var content = modifyContent(entry);
+			var content = modifyContent(entry, settings);
 
 			topics.post({
 				uid: posterUid,
@@ -339,7 +378,7 @@ function postEntry(feed, entry, callback) {
 	});
 }
 
-function modifyContent(entry) {
+function modifyContent(entry, settings) {
 	var content = '';
 	if (entry.hasOwnProperty('content') && entry.content.content) {
 		content = entry.content.content;
@@ -363,11 +402,34 @@ function modifyContent(entry) {
 	}
 
 	if (settings.convertToMarkdown) {
+		content = fixTables(content);
 		content = toMarkdown(content + link, toMarkdownOptions);
 	} else {
 		content = content + link;
 	}
 	return content;
+}
+
+function fixTables(content) {
+	var $ = cheerio.load(content);
+
+	$('table').each(function (index, el) {
+		var myTable = $(el);
+		myTable.find('p').each(function() {
+			$(this).replaceWith($(this).html());
+		});
+		var thead = myTable.find('thead');
+		var tbody = myTable.find('tbody');
+
+		if (thead.length === 0 && tbody.length) {
+			var firstRow = tbody.find('tr').first();
+
+			thead = $('<thead>'+ firstRow.html() + '</thead>').prependTo(myTable);
+			firstRow.remove();
+		}
+	});
+
+	return $('body').html();
 }
 
 function setTimestampToFeedPublishedDate(data, entry) {
@@ -395,22 +457,27 @@ function setTimestampToFeedPublishedDate(data, entry) {
 function getFeedByYahoo(feedUrl, entriesToPull, callback) {
 	entriesToPull = parseInt(entriesToPull, 10);
 	entriesToPull = entriesToPull ? entriesToPull : 4;
+	feedUrl = feedUrl + '?t=' + Date.now();
 	var yql = encodeURIComponent('select entry FROM feednormalizer where url=\'' +
 		feedUrl + '\' AND output=\'atom_1.0\' | truncate(count=' + entriesToPull + ')');
+	var url = 'https://query.yahooapis.com/v1/public/yql?q=' + yql + '&format=json';
+
 	request({
-		url: 'https://query.yahooapis.com/v1/public/yql?q=' + yql + '&format=json',
+		url: url,
 		timeout: 120000
 	}, function (err, response, body) {
 		if (!err && response.statusCode === 200) {
+			var p;
 			try {
-				var p = JSON.parse(body);
-				if (p.query.count > 0) {
-					callback(null, Array.isArray(p.query.results.feed) ? p.query.results.feed : [p.query.results.feed]);
-				} else {
-					callback(new Error('No new feed is returned'));
-				}
+				p = JSON.parse(body);
 			} catch (e) {
-				callback(e);
+				return callback(e);
+			}
+
+			if (p.query.count > 0) {
+				callback(null, Array.isArray(p.query.results.feed) ? p.query.results.feed : [p.query.results.feed]);
+			} else {
+				callback(new Error('No new feed is returned'));
 			}
 		} else {
 			callback(err);
@@ -455,34 +522,29 @@ admin.getFeeds = function(callback) {
 };
 
 admin.getSettings = function(callback) {
-	db.getObject('nodebb-plugin-rss:settings', function(err, settings) {
+	db.getObject('nodebb-plugin-rss:settings', function(err, settingsData) {
 		if (err) {
 			return callback(err);
 		}
-		settings = settings || {};
+		settingsData = settingsData || {};
 
-		if (!settings.hasOwnProperty('convertToMarkdown')) {
-			settings.convertToMarkdown = 1;
+		if (!settingsData.hasOwnProperty('convertToMarkdown')) {
+			settingsData.convertToMarkdown = 1;
 		}
 
-		settings.collapseWhiteSpace = parseInt(settings.collapseWhiteSpace, 10) === 1;
-		settings.convertToMarkdown = parseInt(settings.convertToMarkdown, 10) === 1;
-		settings.useGFM = parseInt(settings.useGFM, 10) === 1;
-		callback(null, settings);
+		settingsData.collapseWhiteSpace = parseInt(settingsData.collapseWhiteSpace, 10) === 1;
+		settingsData.convertToMarkdown = parseInt(settingsData.convertToMarkdown, 10) === 1;
+		settingsData.useGFM = parseInt(settingsData.useGFM, 10) === 1;
+		callback(null, settingsData);
 	});
 };
 
 admin.saveSettings = function(data, callback) {
-	settings.collapseWhiteSpace = parseInt(data.collapseWhiteSpace, 10) === 1;
-	settings.convertToMarkdown = parseInt(data.convertToMarkdown, 10) === 1;
-	settings.useGFM = parseInt(data.useGFM, 10) === 1;
-	db.setObject('nodebb-plugin-rss:settings', settings, function(err) {
-		if (err) {
-			return callback(err);
-		}
-		pubsub.publish('nodebb-plugin-rss:settings', settings);
-		callback();
-	});
+	db.setObject('nodebb-plugin-rss:settings', {
+		collapseWhitespace: data.collapseWhitespace,
+		convertToMarkdown: data.convertToMarkdown,
+		useGFM: data.useGFM,
+	}, callback);
 };
 
 function saveFeeds(feeds, callback) {
@@ -490,6 +552,7 @@ function saveFeeds(feeds, callback) {
 		if (!feed.url) {
 			return next();
 		}
+		feed.url = feed.url.replace(/\/+$/, '');
 		async.parallel([
 			function(next) {
 				db.setObject('nodebb-plugin-rss:feed:' + feed.url, feed, next);
@@ -530,9 +593,6 @@ pubsub.on('nodebb-plugin-rss:deactivate', function() {
 	stopCronJobs();
 });
 
-pubsub.on('nodebb-plugin-rss:settings', function(newSettings) {
-	settings = newSettings;
-});
 
 admin.deactivate = function(data) {
 	if (data.id === 'nodebb-plugin-rss') {
@@ -546,12 +606,5 @@ admin.uninstall = function(data) {
 		deleteSettings();
 	}
 };
-
-admin.getSettings(function(err, settingsData) {
-	if (err) {
-		return winston.error(err.message);
-	}
-	settings = settingsData;
-});
 
 rssPlugin.admin = admin;

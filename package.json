@@ -15,6 +15,7 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "async": "2.3.0",
+    "cheerio": "1.0.0-rc.2",
     "cron": "~1.0.5",
     "to-markdown": "^3.0.4",
     "string": "~3.0.0"
