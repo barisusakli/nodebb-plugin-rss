@@ -557,7 +557,7 @@ admin.getSettings = function(callback) {
 
 admin.saveSettings = function(data, callback) {
 	db.setObject('nodebb-plugin-rss:settings', {
-		collapseWhitespace: data.collapseWhitespace,
+		collapseWhiteSpace: data.collapseWhiteSpace,
 		convertToMarkdown: data.convertToMarkdown,
 		useGFM: data.useGFM,
 	}, callback);
