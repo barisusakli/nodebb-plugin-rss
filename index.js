@@ -419,6 +419,7 @@ function fixTables(content) {
 		myTable.find('p').each(function() {
 			$(this).replaceWith($(this).html());
 		});
+		myTable.find('colgroup').remove();
 		var thead = myTable.find('thead');
 		var tbody = myTable.find('tbody');
 
