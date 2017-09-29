@@ -86,8 +86,8 @@ $(document).ready(function() {
 	});
 
 	$('#addFeed').on('click', function() {
-		ajaxify.loadTemplate('partials/feed', function(feedTemplate) {
-			var html = templates.parse(templates.getBlock(feedTemplate, 'feeds'), {
+		require(['benchpress'], function (benchpress) {
+			benchpress.parse('partials/feed', {
 				feeds: [{
 					url: '',
 					category: '',
@@ -97,12 +97,12 @@ $(document).ready(function() {
 					lastEntryDate: 0,
 					entriesToPull: 4
 				}]
+			}, function (html) {
+				var newFeed = $(html).appendTo('.feeds');
+				enableAutoComplete(newFeed.find('.feed-user'));
+				enableTagsInput(newFeed.find('.feed-tags'));
+				addOptionsToSelect(newFeed.find('.feed-category'));
 			});
-
-			var newFeed = $(html).appendTo('.feeds');
-			enableAutoComplete(newFeed.find('.feed-user'));
-			enableTagsInput(newFeed.find('.feed-tags'));
-			addOptionsToSelect(newFeed.find('.feed-category'));
 		});
 
 		return false;
