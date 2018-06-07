@@ -48,12 +48,6 @@ plugins.isActive('nodebb-plugin-rss', function(err, active) {
 	}
 });
 
-rssPlugin.onClearRequireCache = function(data, callback) {
-	stopCronJobs();
-	cronJobs.length = 0;
-	callback(null, data);
-};
-
 rssPlugin.init = function(params, callback) {
 
 	params.router.get('/admin/plugins/rss', params.middleware.applyCSRF, params.middleware.admin.buildHeader, renderAdmin);
@@ -217,7 +211,7 @@ function checkFeed(req, res) {
 }
 
 function reStartCronJobs() {
-	if (nconf.get('isPrimary') === 'true') {
+	if (nconf.get('runJobs')) {
 		stopCronJobs();
 		cronJobs.forEach(function(job) {
 			job.start();
@@ -226,7 +220,7 @@ function reStartCronJobs() {
 }
 
 function stopCronJobs() {
-	if (nconf.get('isPrimary') === 'true') {
+	if (nconf.get('runJobs')) {
 		cronJobs.forEach(function(job) {
 			job.stop();
 		});
