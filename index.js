@@ -159,8 +159,10 @@ function checkFeed(req, res) {
 				entryData.error = 'ERROR: content/summary is missing!'
 			}
 
-			if (!entryData.published) {
+			if (!entryData.published && !entryData.date && !entryData.updated) {
 				entryData.published = 'ERROR: published field is missing!';
+			} else {
+				entryData.published = entryData.published || entryData.date || entryData.updated;
 			}
 
 			if (!entryData.link && !entryData.link.href) {
@@ -285,7 +287,7 @@ function pullFeed(feed, settings, callback) {
 					winston.info('[plugin-rss] entry is not new, id: ' + entry.id + ', title: ' + entry.title + ', link: ' + (entry.link && entry.link.href));
 					return next();
 				}
-				winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + entry.published);
+				winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + getEntryDate(entry));
 				postEntry(feed, entry, settings, next);
 			});
 		}, function(err) {
@@ -295,6 +297,13 @@ function pullFeed(feed, settings, callback) {
 			callback();
 		});
 	});
+}
+
+function getEntryDate(entry) {
+	if (!entry) {
+		return null;
+	}
+	return entry.published || entry.date || entry.updated || Date.now();
 }
 
 function isEntryNew(feed, entry, callback) {
@@ -448,7 +457,7 @@ function setTimestampToFeedPublishedDate(data, entry) {
 	var postData = data.postData;
 	var tid = topicData.tid;
 	var pid = postData.pid;
-	var timestamp = new Date(entry.published).getTime();
+	var timestamp = new Date(getEntryDate(entry)).getTime();
 
 	db.setObjectField('topic:' + tid, 'timestamp', timestamp);
 	db.sortedSetsAdd([
