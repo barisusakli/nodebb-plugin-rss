@@ -390,7 +390,7 @@ function modifyContent(entry, settings) {
 	}
 
 	if (content) {
-		content = S(content).stripTags('div', 'script', 'span', 'iframe').trim().s;
+		content = S(content).stripTags('div', 'script', 'span', 'iframe', 'u').trim().s;
 	}
 
 	if (settings.collapseWhiteSpace) {
