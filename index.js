@@ -96,7 +96,7 @@ rssPlugin.onTopicPurge = function(data) {
 
 rssPlugin.filterTopicBuild = function (hookData, callback) {
 	async.each(hookData.templateData.posts, function (postData, next) {
-		if (parseInt(postData.rssFeed, 10) === 1) {
+		if (parseInt(postData.rssFeedUseHTML, 10) === 1) {
 			db.getObjectField('post:' + postData.pid, 'content', function (err, content) {
 				if (err) {
 					return next(err);
@@ -108,7 +108,7 @@ rssPlugin.filterTopicBuild = function (hookData, callback) {
 			setImmediate(next);
 		}
 	}, function (err) {
-		callback(null, hookData);
+		callback(err, hookData);
 	});
 };
 
@@ -397,7 +397,11 @@ function postEntry(feed, entry, settings, callback) {
 			db.sortedSetAdd('nodebb-plugin-rss:feed:' + feed.url + ':uuid', topicData.tid, uuid, next);
 		},
 		function (next) {
-			db.setObjectField('post:' + postData.pid, 'rssFeed', 1, next);
+			if (!settings.convertToMarkdown) {
+				db.setObjectField('post:' + postData.pid, 'rssFeedUseHTML', 1, next);
+			} else {
+				next();
+			}
 		},
 	], function (err) {
 		if (err) {
