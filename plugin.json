@@ -10,7 +10,8 @@
 
         { "hook": "action:plugin.deactivate", "method": "admin.deactivate" },
         { "hook": "action:plugin.uninstall", "method": "admin.uninstall"},
-        { "hook": "action:topic.purge", "method": "onTopicPurge"}
+        { "hook": "action:topic.purge", "method": "onTopicPurge"},
+        { "hook": "filter:topic.build", "method": "filterTopicBuild" }
     ],
     "templates": "./public/templates"
 }

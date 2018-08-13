@@ -94,6 +94,24 @@ rssPlugin.onTopicPurge = function(data) {
 	});
 };
 
+rssPlugin.filterTopicBuild = function (hookData, callback) {
+	async.each(hookData.templateData.posts, function (postData, next) {
+		if (parseInt(postData.rssFeed, 10) === 1) {
+			db.getObjectField('post:' + postData.pid, 'content', function (err, content) {
+				if (err) {
+					return next(err);
+				}
+				postData.content = content;
+				next();
+			});
+		} else {
+			setImmediate(next);
+		}
+	}, function (err) {
+		callback(null, hookData);
+	});
+};
+
 function renderAdmin(req, res, next) {
 	async.parallel({
 		feeds: function(next) {
@@ -141,7 +159,7 @@ function checkFeed(req, res) {
 	async.parallel({
 		settings: admin.getSettings,
 		entries: function (next) {
-			getFeedByYahoo(req.query.url, 1, next);
+			getFeedByYahoo(req.query.url, 3, next);
 		},
 	}, function (err, results) {
 		if (err) {
@@ -201,10 +219,13 @@ function checkFeed(req, res) {
 				}
 
 				entryData.entry.rendered = parsed;
+				if (!results.settings.convertToMarkdown) {
+					entryData.entry.rendered = entryData.entry.modifiedContent;
+				}
 				next();
 			});
 		}, function (err) {
-			if (err){
+			if (err) {
 				return next(err);
 			}
 			res.json(entries);
@@ -325,6 +346,7 @@ function postEntry(feed, entry, settings, callback) {
 
 	var posterUid;
 	var topicData;
+	var postData;
 
 	async.waterfall([
 		function (next) {
@@ -362,6 +384,7 @@ function postEntry(feed, entry, settings, callback) {
 		},
 		function (result, next) {
 			topicData = result.topicData;
+			postData = result.postData;
 			if (feed.timestamp === 'feed') {
 				setTimestampToFeedPublishedDate(result, entry);
 			}
@@ -372,7 +395,10 @@ function postEntry(feed, entry, settings, callback) {
 		function (next) {
 			var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
 			db.sortedSetAdd('nodebb-plugin-rss:feed:' + feed.url + ':uuid', topicData.tid, uuid, next);
-		}
+		},
+		function (next) {
+			db.setObjectField('post:' + postData.pid, 'rssFeed', 1, next);
+		},
 	], function (err) {
 		if (err) {
 			winston.error(err);
@@ -390,14 +416,14 @@ function modifyContent(entry, settings) {
 	}
 
 	if (content) {
-		content = S(content).stripTags('div', 'script', 'span', 'iframe', 'u', 'pub', 'small', 'figure', 'figcaption').trim().s;
+		content = S(content).stripTags('div', 'script', 'span', 'iframe', 'pub', 'figure', 'figcaption').trim().s;
 	}
 
 	if (settings.collapseWhiteSpace) {
 		content = S(content).collapseWhitespace().s;
 	}
 
-	var link = (entry.link && entry.link.href) ? ('<br/><br/>' + entry.link.href) : '';
+	var link = (entry.link && entry.link.href) ? entry.link.href : '';
 
 	var toMarkdownOptions = {};
 	if (settings.useGFM) {
@@ -406,9 +432,9 @@ function modifyContent(entry, settings) {
 
 	if (settings.convertToMarkdown) {
 		content = fixTables(content);
-		content = toMarkdown(content + link, toMarkdownOptions);
+		content = toMarkdown(content + '<br/><br/>' + link, toMarkdownOptions);
 	} else {
-		content = content + link;
+		content = content + '<br/><br/><a href="'+ link + '">' + link + '</a>';
 	}
 	return content;
 }
