@@ -2,19 +2,19 @@
 
 var async = require('async');
 var cheerio = require('cheerio');
-var request = module.parent.require('request');
-var winston = module.parent.require('winston');
 var cron = require('cron').CronJob;
 var toMarkdown = require('to-markdown');
 var S = require('string');
 
-var nconf = module.parent.require('nconf');
-var meta = module.parent.require('./meta');
-var pubsub = module.parent.require('./pubsub');
-var topics = module.parent.require('./topics');
-var db = module.parent.require('./database');
-var user = module.parent.require('./user');
-var plugins = module.parent.require('./plugins');
+var request = require.main.require('request');
+var winston = require.main.require('winston');
+var nconf = require.main.require('nconf');
+var meta = require.main.require('./src/meta');
+var pubsub = require.main.require('./src/pubsub');
+var topics = require.main.require('./src/topics');
+var db = require.main.require('./src/database');
+var user = require.main.require('./src/user');
+var plugins = require.main.require('./src/plugins');
 
 var rssPlugin = module.exports;
 
@@ -95,22 +95,56 @@ rssPlugin.onTopicPurge = function(data) {
 };
 
 rssPlugin.filterTopicBuild = function (hookData, callback) {
-	async.each(hookData.templateData.posts, function (postData, next) {
-		if (parseInt(postData.rssFeedUseHTML, 10) === 1) {
-			db.getObjectField('post:' + postData.pid, 'content', function (err, content) {
-				if (err) {
-					return next(err);
-				}
-				postData.content = content;
-				next();
-			});
-		} else {
-			setImmediate(next);
-		}
-	}, function (err) {
+	restorePostContentToHtml(hookData.templateData.posts, function (err) {
+		callback(err, hookData);
+	})
+};
+
+rssPlugin.filterTeasersGet = function (hookData, callback) {
+	restorePostContent(hookData.teasers, function (err) {
 		callback(err, hookData);
 	});
 };
+
+rssPlugin.filterPostGetPostSummaryByPids = function (hookData, callback) {
+	restorePostContent(hookData.posts, function (err) {
+		callback(err, hookData);
+	});
+};
+
+function restorePostContent(posts, callback) {
+	async.waterfall([
+		function (next) {
+			const keys = posts.map(p => p && 'post:' + p.pid);
+			db.getObjectsFields(keys, ['rssFeedUseHTML'], next);
+		},
+		function (postData, next) {
+			posts.forEach((post, i) => {
+				if (post) {
+					post.rssFeedUseHTML = postData[i].rssFeedUseHTML;
+				}
+			});
+			restorePostContentToHtml(posts, next);
+		},
+	], callback);
+}
+
+function restorePostContentToHtml(posts, callback) {
+	async.each(posts, function (postData, next) {
+		if (!postData || parseInt(postData.rssFeedUseHTML, 10) !== 1){
+			return setImmediate(next);
+		}
+		db.getObjectField('post:' + postData.pid, 'content', function (err, content) {
+			if (err) {
+				return next(err);
+			}
+			postData.content = content;
+			next();
+		});
+	}, function (err) {
+		callback(err);
+	});
+}
 
 function renderAdmin(req, res, next) {
 	async.parallel({
