@@ -3,7 +3,8 @@
 var async = require('async');
 var cheerio = require('cheerio');
 var cron = require('cron').CronJob;
-var toMarkdown = require('to-markdown');
+var TurndownService = require('turndown');
+var gfm = require('turndown-plugin-gfm').gfm
 var S = require('string');
 var Parser = require('rss-parser');
 var _ = require('lodash');
@@ -457,14 +458,13 @@ function modifyContent(entry, settings) {
 
 	var link = (entry.link && entry.link.href) ? entry.link.href : '';
 
-	var toMarkdownOptions = {};
-	if (settings.useGFM) {
-		toMarkdownOptions.gfm = true;
-	}
-
 	if (settings.convertToMarkdown) {
 		content = fixTables(content);
-		content = toMarkdown(content + '<br/><br/>' + link, toMarkdownOptions);
+		var turndownService = new TurndownService();
+		if (settings.useGFM) {
+			turndownService.use(gfm);
+		}
+		content = turndownService.turndown(content + '<br/><br/>' + link);
 	} else {
 		content = content + '<br/><br/><a href="'+ link + '">' + link + '</a>';
 	}
