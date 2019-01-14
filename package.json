@@ -17,7 +17,9 @@
     "async": "2.3.0",
     "cheerio": "1.0.0-rc.2",
     "cron": "~1.0.5",
+    "lodash": "4.17.11",
     "to-markdown": "^3.0.4",
+    "rss-parser": "^3.6.2",
     "string": "~3.0.0"
   },
   "nbbpm": {

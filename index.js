@@ -5,8 +5,9 @@ var cheerio = require('cheerio');
 var cron = require('cron').CronJob;
 var toMarkdown = require('to-markdown');
 var S = require('string');
+var Parser = require('rss-parser');
+var _ = require('lodash');
 
-var request = require.main.require('request');
 var winston = require.main.require('winston');
 var nconf = require.main.require('nconf');
 var meta = require.main.require('./src/meta');
@@ -193,7 +194,7 @@ function checkFeed(req, res) {
 	async.parallel({
 		settings: admin.getSettings,
 		entries: function (next) {
-			getFeedByYahoo(req.query.url, 3, next);
+			parseFeed(req.query.url, 3, next);
 		},
 	}, function (err, results) {
 		if (err) {
@@ -202,7 +203,7 @@ function checkFeed(req, res) {
 		var entries = results.entries;
 
 		entries = entries.map(function (entry) {
-			var entryData = entry.entry || {};
+			var entryData = entry || {};
 			if (!entryData.title || (typeof entryData.title !== 'string' && !entryData.title.content)) {
 				entryData.title = 'ERROR: title is missing';
 			}
@@ -217,7 +218,7 @@ function checkFeed(req, res) {
 				entryData.published = entryData.published || entryData.date || entryData.updated;
 			}
 
-			if (!entryData.link && !entryData.link.href) {
+			if (!entryData.link || !entryData.link.href) {
 				entryData.link = {
 					href: 'ERROR: link is missing!',
 				};
@@ -225,13 +226,6 @@ function checkFeed(req, res) {
 
 			if (!entryData.id) {
 				entryData.id = 'ERROR: id is missing';
-			}
-
-			if (Array.isArray(entryData.category)) {
-				entryData.tags = entryData.category.map(function (category) {
-					return category && category.term;
-				});
-				delete entryData.category;
 			}
 
 			entryData.modifiedContent = modifyContent(entryData, results.settings);
@@ -242,7 +236,7 @@ function checkFeed(req, res) {
 			delete entryData.creator;
 			delete entryData.updated;
 			delete entryData.date;
-			entry.entry = entryData;
+			entry.entry = _.cloneDeep(entryData);
 			return entry;
 		});
 
@@ -320,7 +314,7 @@ function pullFeed(feed, settings, callback) {
 		return callback();
 	}
 
-	getFeedByYahoo(feed.url, feed.entriesToPull, function(err, entries) {
+	parseFeed(feed.url, feed.entriesToPull, function(err, entries) {
 		if (err) {
 			winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
 			return callback();
@@ -328,7 +322,7 @@ function pullFeed(feed, settings, callback) {
 
 		entries = entries.filter(Boolean);
 		async.eachSeries(entries, function(entryObj, next) {
-			var entry = entryObj.entry;
+			var entry = entryObj;
 			if (!entry) {
 				return next();
 			}
@@ -538,34 +532,28 @@ function setTimestampToFeedPublishedDate(data, entry) {
 	], timestamp, pid);
 }
 
-function getFeedByYahoo(feedUrl, entriesToPull, callback) {
+function parseFeed(feedUrl, entriesToPull, callback) {
 	entriesToPull = parseInt(entriesToPull, 10);
 	entriesToPull = entriesToPull ? entriesToPull : 4;
 	feedUrl = feedUrl + '?t=' + Date.now();
-	var yql = encodeURIComponent('select entry FROM feednormalizer where url=\'' +
-		feedUrl + '\' AND output=\'atom_1.0\' | truncate(count=' + entriesToPull + ')');
-	var url = 'https://query.yahooapis.com/v1/public/yql?q=' + yql + '&format=json';
 
-	request({
-		url: url,
-		timeout: 120000
-	}, function (err, response, body) {
-		if (!err && response.statusCode === 200) {
-			var p;
-			try {
-				p = JSON.parse(body);
-			} catch (e) {
-				return callback(e);
-			}
-
-			if (p.query.count > 0) {
-				callback(null, Array.isArray(p.query.results.feed) ? p.query.results.feed : [p.query.results.feed]);
-			} else {
-				callback(new Error('No new feed is returned'));
-			}
-		} else {
-			callback(err);
+	let parser = new Parser();
+	parser.parseURL(feedUrl, function(err, feed) {
+		if (err)  {
+			return callback(err);
 		}
+		feed.items = feed.items.slice(0, entriesToPull);
+		feed.items = feed.items.map(function (item) {
+			return {
+				title: item.title,
+				content: { content: item.content },
+				published: item.pubDate,
+				link: { href: item.link },
+				id: item.guid,
+				tags: item.categories,
+			};
+		});
+		callback(null, feed.items);
 	});
 }
 
