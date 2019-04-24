@@ -201,7 +201,6 @@ function checkFeed(req, res) {
 			return res.json(err.message);
 		}
 		var entries = results.entries;
-
 		entries = entries.map(function (entry) {
 			var entryData = entry || {};
 			if (!entryData.title || (typeof entryData.title !== 'string' && !entryData.title.content)) {
@@ -548,7 +547,7 @@ function parseFeed(feedUrl, entriesToPull, callback) {
 				content: { content: item.content },
 				published: item.pubDate,
 				link: { href: item.link },
-				id: item.guid,
+				id: item.guid || item.id,
 				tags: item.categories,
 			};
 		});
