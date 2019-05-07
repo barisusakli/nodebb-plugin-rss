@@ -1,6 +1,6 @@
 # NodeBB RSS Parser
 
-This NodeBB plugin uses the [Yahoo YQL API](https://developer.yahoo.com/yql/) to pull RSS feeds and create topics in predefined categories.
+This NodeBB plugin pulls RSS feeds and creates topics in predefined categories.
 
 To customize options for the parser, please consult the "RSS" page in the administration panel, under the "Plugins" heading.
 

@@ -4,7 +4,7 @@ var async = require('async');
 var cheerio = require('cheerio');
 var cron = require('cron').CronJob;
 var TurndownService = require('turndown');
-var gfm = require('turndown-plugin-gfm').gfm
+var gfm = require('turndown-plugin-gfm').gfm;
 var S = require('string');
 var _ = require('lodash');
 
@@ -26,24 +26,24 @@ rssPlugin.renderRssWidget = widget.render;
 var cronJobs = [];
 
 // minute
-cronJobs.push(new cron('0 * * * * *', function() { pullFeedsInterval(1); }, null, false));
+cronJobs.push(new cron('0 * * * * *', function () { pullFeedsInterval(1); }, null, false));
 
 // hour
-cronJobs.push(new cron('0 0 * * * *', function() { pullFeedsInterval(60); }, null, false));
+cronJobs.push(new cron('0 0 * * * *', function () { pullFeedsInterval(60); }, null, false));
 
 // 12 hours
-cronJobs.push(new cron('0 0 0/12 * * *', function() { pullFeedsInterval(60 * 12); }, null, false));
+cronJobs.push(new cron('0 0 0/12 * * *', function () { pullFeedsInterval(60 * 12); }, null, false));
 
 // 24 hours
-cronJobs.push(new cron('0 0 0 * * *', function() { pullFeedsInterval(60 * 24); }, null, false));
+cronJobs.push(new cron('0 0 0 * * *', function () { pullFeedsInterval(60 * 24); }, null, false));
 
 // 48 hours
-cronJobs.push(new cron('0 0 0 */2 * *', function() { pullFeedsInterval(60 * 24 * 2); }, null, false));
+cronJobs.push(new cron('0 0 0 */2 * *', function () { pullFeedsInterval(60 * 24 * 2); }, null, false));
 
 // one week
-cronJobs.push(new cron('0 0 0 0 0 6', function() { pullFeedsInterval(60 * 24 * 7); }, null, false));
+cronJobs.push(new cron('0 0 0 0 0 6', function () { pullFeedsInterval(60 * 24 * 7); }, null, false));
 
-plugins.isActive('nodebb-plugin-rss', function(err, active) {
+plugins.isActive('nodebb-plugin-rss', function (err, active) {
 	if (err) {
 		return winston.error(err.stack);
 	}
@@ -73,8 +73,8 @@ rssPlugin.init = function(params, callback) {
 					content: req.body.html,
 				},
 				link: {
-					href: "https://community.nodebb.org",
-				}
+					href: 'https://community.nodebb.org',
+				},
 			}, settings);
 			res.send(content);
 		});
@@ -83,17 +83,15 @@ rssPlugin.init = function(params, callback) {
 	callback();
 };
 
-rssPlugin.onTopicPurge = function(data) {
+rssPlugin.onTopicPurge = function (data) {
 	async.waterfall([
 		function (next) {
 			db.getSetMembers('nodebb-plugin-rss:feeds', next);
 		},
 		function (feedUrls, next) {
-			var keys = feedUrls.map(function(url) {
-				return 'nodebb-plugin-rss:feed:' + url + ':uuid';
-			});
+			var keys = feedUrls.map(url => 'nodebb-plugin-rss:feed:' + url + ':uuid');
 			db.sortedSetsRemoveRangeByScore(keys, data.topic.tid, data.topic.tid, next);
-		}
+		},
 	], function (err) {
 		if (err) {
 			return winston.error(err);
@@ -104,7 +102,7 @@ rssPlugin.onTopicPurge = function(data) {
 rssPlugin.filterTopicBuild = function (hookData, callback) {
 	restorePostContentToHtml(hookData.templateData.posts, function (err) {
 		callback(err, hookData);
-	})
+	});
 };
 
 rssPlugin.filterTeasersGet = function (hookData, callback) {
@@ -138,7 +136,7 @@ function restorePostContent(posts, callback) {
 
 function restorePostContentToHtml(posts, callback) {
 	async.each(posts, function (postData, next) {
-		if (!postData || parseInt(postData.rssFeedUseHTML, 10) !== 1){
+		if (!postData || parseInt(postData.rssFeedUseHTML, 10) !== 1) {
 			return setImmediate(next);
 		}
 		db.getObjectField('post:' + postData.pid, 'content', function (err, content) {
@@ -155,13 +153,13 @@ function restorePostContentToHtml(posts, callback) {
 
 function renderAdmin(req, res, next) {
 	async.parallel({
-		feeds: function(next) {
+		feeds: function (next) {
 			admin.getFeeds(next);
 		},
-		settings: function(next) {
+		settings: function (next) {
 			admin.getSettings(next);
-		}
-	}, function(err, results) {
+		},
+	}, function (err, results) {
 		if (err) {
 			return next(err);
 		}
@@ -171,24 +169,24 @@ function renderAdmin(req, res, next) {
 }
 
 function save(req, res, next) {
-	deleteFeeds(function(err) {
+	deleteFeeds(function (err) {
 		if (err) {
 			return next(err);
 		}
 
 		async.parallel([
-			function(next) {
+			function (next) {
 				saveFeeds(req.body.feeds, next);
 			},
-			function(next) {
+			function (next) {
 				admin.saveSettings(req.body.settings, next);
-			}
-		], function(err) {
+			},
+		], function (err) {
 			if (err) {
 				return next(err);
 			}
 
-			res.json({message: 'Feeds saved!'});
+			res.json({ message: 'Feeds saved!' });
 		});
 	});
 }
@@ -207,7 +205,6 @@ function checkFeed(req, res) {
 			return res.json(err.message);
 		}
 		var entries = results.entries;
-
 		entries = entries.map(function (entry) {
 			var entryData = entry || {};
 			if (!entryData.title || (typeof entryData.title !== 'string' && !entryData.title.content)) {
@@ -215,7 +212,7 @@ function checkFeed(req, res) {
 			}
 
 			if ((!entryData.content || !entryData.content.content) && (!entryData.summary || !entryData.summary.content)) {
-				entryData.error = 'ERROR: content/summary is missing!'
+				entryData.error = 'ERROR: content/summary is missing!';
 			}
 
 			if (!entryData.published && !entryData.date && !entryData.updated) {
@@ -260,7 +257,7 @@ function checkFeed(req, res) {
 			});
 		}, function (err) {
 			if (err) {
-				return next(err);
+				return res.json(err.message);
 			}
 			res.json(entries);
 		});
@@ -270,7 +267,7 @@ function checkFeed(req, res) {
 function reStartCronJobs() {
 	if (nconf.get('runJobs')) {
 		stopCronJobs();
-		cronJobs.forEach(function(job) {
+		cronJobs.forEach(function (job) {
 			job.start();
 		});
 	}
@@ -278,7 +275,7 @@ function reStartCronJobs() {
 
 function stopCronJobs() {
 	if (nconf.get('runJobs')) {
-		cronJobs.forEach(function(job) {
+		cronJobs.forEach(function (job) {
 			job.stop();
 		});
 	}
@@ -292,10 +289,10 @@ function pullFeedsInterval(interval) {
 		if (err) {
 			winston.error(err);
 		}
-		if(!Array.isArray(results.feeds)) {
+		if (!Array.isArray(results.feeds)) {
 			return;
 		}
-		results.feeds = results.feeds.filter(function(item) {
+		results.feeds = results.feeds.filter(function (item) {
 			return item && parseInt(item.interval, 10) === interval;
 		});
 		if (!results.feeds.length) {
@@ -308,7 +305,7 @@ function pullFeedsInterval(interval) {
 function pullFeeds(feeds, settings) {
 	async.eachSeries(feeds, function (feed, next) {
 		pullFeed(feed, settings, next);
-	}, function(err) {
+	}, function (err) {
 		if (err) {
 			winston.error(err.message);
 		}
@@ -320,14 +317,14 @@ function pullFeed(feed, settings, callback) {
 		return callback();
 	}
 
-	parseFeed(feed.url, feed.entriesToPull, function(err, entries) {
+	parseFeed(feed.url, feed.entriesToPull, function (err, entries) {
 		if (err) {
 			winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
 			return callback();
 		}
 
 		entries = entries.filter(Boolean);
-		async.eachSeries(entries, function(entryObj, next) {
+		async.eachSeries(entries, function (entryObj, next) {
 			var entry = entryObj;
 			if (!entry) {
 				return next();
@@ -345,7 +342,7 @@ function pullFeed(feed, settings, callback) {
 				winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + getEntryDate(entry));
 				postEntry(feed, entry, settings, next);
 			});
-		}, function(err) {
+		}, function (err) {
 			if (err) {
 				winston.error(err);
 			}
@@ -398,7 +395,7 @@ function postEntry(feed, entry, settings, callback) {
 
 			// use tags from feed if there are any
 			if (Array.isArray(entry.category)) {
-				var entryTags = entry.category.map(function(data) {
+				var entryTags = entry.category.map(function (data) {
 					return data && data.term;
 				}).filter(Boolean);
 				tags = tags.concat(entryTags);
@@ -413,7 +410,7 @@ function postEntry(feed, entry, settings, callback) {
 				title: title,
 				content: content,
 				cid: feed.category,
-				tags: tags
+				tags: tags,
 			}, next);
 		},
 		function (result, next) {
@@ -424,7 +421,7 @@ function postEntry(feed, entry, settings, callback) {
 			}
 			var max = Math.max(parseInt(meta.config.postDelay, 10) || 10, parseInt(meta.config.newbiePostDelay, 10) || 10) + 1;
 
-			user.setUserField(posterUid, 'lastposttime', Date.now() - max * 1000, next);
+			user.setUserField(posterUid, 'lastposttime', Date.now() - (max * 1000), next);
 		},
 		function (next) {
 			var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
@@ -471,7 +468,7 @@ function modifyContent(entry, settings) {
 		}
 		content = turndownService.turndown(content + '<br/><br/>' + link);
 	} else {
-		content = content + '<br/><br/><a href="'+ link + '">' + link + '</a>';
+		content = content + '<br/><br/><a href="' + link + '">' + link + '</a>';
 	}
 	return content;
 }
@@ -482,7 +479,7 @@ function fixTables(content) {
 	$('table').each(function (index, el) {
 		var myTable = $(el);
 		// remove all p tags
-		myTable.find('p').each(function() {
+		myTable.find('p').each(function () {
 			$(this).replaceWith($(this).html());
 		});
 		myTable.find('colgroup').remove();
@@ -492,11 +489,11 @@ function fixTables(content) {
 		var thRows = myTable.find('tr:has(th)');
 		var tdRows = myTable.find('tr:has(td)');
 
-		if (thead.length === 0) {  //if there is no thead element, add one.
+		if (thead.length === 0) { // if there is no thead element, add one.
 			thead = $('<thead></thead>').prependTo(myTable);
 		}
 
-		if (tbody.length === 0) {  //if there is no tbody element, add one.
+		if (tbody.length === 0) { // if there is no tbody element, add one.
 			tbody = $('<tbody></tbody>').appendTo(myTable);
 		}
 
@@ -527,53 +524,53 @@ function setTimestampToFeedPublishedDate(data, entry) {
 		'topics:tid',
 		'cid:' + topicData.cid + ':tids',
 		'cid:' + topicData.cid + ':uid:' + topicData.uid + ':tids',
-		'uid:' + topicData.uid + ':topics'
+		'uid:' + topicData.uid + ':topics',
 	], timestamp, tid);
 
 	db.setObjectField('post:' + pid, 'timestamp', timestamp);
 	db.sortedSetsAdd([
 		'posts:pid',
-		'cid:' + topicData.cid + ':pids'
+		'cid:' + topicData.cid + ':pids',
 	], timestamp, pid);
 }
 
 var admin = {};
 
-admin.menu = function(custom_header, callback) {
+admin.menu = function (custom_header, callback) {
 	custom_header.plugins.push({
 		route: '/plugins/rss',
 		icon: 'fa-rss',
-		name: 'RSS'
+		name: 'RSS',
 	});
 
 	callback(null, custom_header);
 };
 
-admin.getFeeds = function(callback) {
-	db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feedUrls) {
+admin.getFeeds = function (callback) {
+	db.getSetMembers('nodebb-plugin-rss:feeds', function (err, feedUrls) {
 		if (err) {
 			return callback(err);
 		}
 
 		async.map(feedUrls, function (feedUrl, next) {
 			db.getObject('nodebb-plugin-rss:feed:' + feedUrl, next);
-		}, function(err, results) {
+		}, function (err, results) {
 			if (err) {
 				return callback(err);
 			}
-			results.forEach(function(feed) {
+			results.forEach(function (feed) {
 				if (feed) {
 					feed.entriesToPull = feed.entriesToPull || 4;
 				}
 			});
 
-			callback(null, results ? results : []);
+			callback(null, results || []);
 		});
 	});
 };
 
-admin.getSettings = function(callback) {
-	db.getObject('nodebb-plugin-rss:settings', function(err, settingsData) {
+admin.getSettings = function (callback) {
+	db.getObject('nodebb-plugin-rss:settings', function (err, settingsData) {
 		if (err) {
 			return callback(err);
 		}
@@ -590,7 +587,7 @@ admin.getSettings = function(callback) {
 	});
 };
 
-admin.saveSettings = function(data, callback) {
+admin.saveSettings = function (data, callback) {
 	db.setObject('nodebb-plugin-rss:settings', {
 		collapseWhiteSpace: data.collapseWhiteSpace,
 		convertToMarkdown: data.convertToMarkdown,
@@ -605,53 +602,53 @@ function saveFeeds(feeds, callback) {
 		}
 		feed.url = feed.url.replace(/\/+$/, '');
 		async.parallel([
-			function(next) {
+			function (next) {
 				db.setObject('nodebb-plugin-rss:feed:' + feed.url, feed, next);
 			},
-			function(next) {
+			function (next) {
 				db.setAdd('nodebb-plugin-rss:feeds', feed.url, next);
-			}
+			},
 		], next);
 	}, callback);
 }
 
 function deleteFeeds(callback) {
-	callback = callback || function() {};
-	db.getSetMembers('nodebb-plugin-rss:feeds', function(err, feeds) {
+	callback = callback || function () {};
+	db.getSetMembers('nodebb-plugin-rss:feeds', function (err, feeds) {
 		if (err || !feeds || !feeds.length) {
 			return callback(err);
 		}
 
-		async.each(feeds, function(key, next) {
+		async.each(feeds, function (key, next) {
 			async.parallel([
-				function(next) {
+				function (next) {
 					db.delete('nodebb-plugin-rss:feed:' + key, next);
 				},
-				function(next) {
+				function (next) {
 					db.setRemove('nodebb-plugin-rss:feeds', key, next);
-				}
+				},
 			], next);
 		}, callback);
 	});
 }
 
 function deleteSettings(callback) {
-	callback = callback || function() {};
+	callback = callback || function () {};
 	db.delete('nodebb-plugin-rss:settings', callback);
 }
 
-pubsub.on('nodebb-plugin-rss:deactivate', function() {
+pubsub.on('nodebb-plugin-rss:deactivate', function () {
 	stopCronJobs();
 });
 
 
-admin.deactivate = function(data) {
+admin.deactivate = function (data) {
 	if (data.id === 'nodebb-plugin-rss') {
 		pubsub.publish('nodebb-plugin-rss:deactivate');
 	}
 };
 
-admin.uninstall = function(data) {
+admin.uninstall = function (data) {
 	if (data.id === 'nodebb-plugin-rss') {
 		deleteFeeds();
 		deleteSettings();
