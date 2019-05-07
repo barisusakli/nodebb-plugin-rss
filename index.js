@@ -6,7 +6,6 @@ var cron = require('cron').CronJob;
 var TurndownService = require('turndown');
 var gfm = require('turndown-plugin-gfm').gfm
 var S = require('string');
-var Parser = require('rss-parser');
 var _ = require('lodash');
 
 var winston = require.main.require('winston');
@@ -17,8 +16,12 @@ var topics = require.main.require('./src/topics');
 var db = require.main.require('./src/database');
 var user = require.main.require('./src/user');
 var plugins = require.main.require('./src/plugins');
+const widget = require('./widget');
 
 var rssPlugin = module.exports;
+
+rssPlugin.defineWidgets = widget.defineWidgets;
+rssPlugin.renderRssWidget = widget.render;
 
 var cronJobs = [];
 
@@ -51,6 +54,8 @@ plugins.isActive('nodebb-plugin-rss', function(err, active) {
 });
 
 rssPlugin.init = function(params, callback) {
+
+	widget.init(params.app);
 
 	params.router.get('/admin/plugins/rss', params.middleware.applyCSRF, params.middleware.admin.buildHeader, renderAdmin);
 	params.router.get('/api/admin/plugins/rss', params.middleware.applyCSRF, renderAdmin);
@@ -531,32 +536,6 @@ function setTimestampToFeedPublishedDate(data, entry) {
 		'cid:' + topicData.cid + ':pids'
 	], timestamp, pid);
 }
-
-function parseFeed(feedUrl, entriesToPull, callback) {
-	entriesToPull = parseInt(entriesToPull, 10);
-	entriesToPull = entriesToPull ? entriesToPull : 4;
-	feedUrl = feedUrl + '?t=' + Date.now();
-
-	let parser = new Parser();
-	parser.parseURL(feedUrl, function(err, feed) {
-		if (err)  {
-			return callback(err);
-		}
-		feed.items = feed.items.slice(0, entriesToPull);
-		feed.items = feed.items.map(function (item) {
-			return {
-				title: item.title,
-				content: { content: item.content },
-				published: item.pubDate,
-				link: { href: item.link },
-				id: item.guid,
-				tags: item.categories,
-			};
-		});
-		callback(null, feed.items);
-	});
-}
-
 
 var admin = {};
 
