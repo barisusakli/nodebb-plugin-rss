@@ -16,7 +16,9 @@ var topics = require.main.require('./src/topics');
 var db = require.main.require('./src/database');
 var user = require.main.require('./src/user');
 var plugins = require.main.require('./src/plugins');
+
 const widget = require('./widget');
+const feed = require('./feed');
 
 var rssPlugin = module.exports;
 
@@ -198,7 +200,7 @@ function checkFeed(req, res) {
 	async.parallel({
 		settings: admin.getSettings,
 		entries: function (next) {
-			parseFeed(req.query.url, 3, next);
+			feed.getItems(req.query.url, 3, next);
 		},
 	}, function (err, results) {
 		if (err) {
@@ -317,7 +319,7 @@ function pullFeed(feed, settings, callback) {
 		return callback();
 	}
 
-	parseFeed(feed.url, feed.entriesToPull, function (err, entries) {
+	feed.getItems(feed.url, feed.entriesToPull, function (err, entries) {
 		if (err) {
 			winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
 			return callback();

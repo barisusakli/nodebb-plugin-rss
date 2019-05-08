@@ -2,6 +2,8 @@
 
 var Widget = module.exports;
 
+const feed = require('./feed');
+
 var app;
 
 Widget.init = function (_app) {
@@ -30,7 +32,16 @@ Widget.defineWidgets = function(widgets, callback) {
 };
 
 Widget.render = function (widget, callback) {
-    console.log(widget);
-    widget.html = 'bam';
-    callback(null, widget);
+    feed.getItems(widget.data.feedUrl, widget.data.numItems || 4, function (err, entries) {
+        if (err) {
+            return callback(err);
+        }
+        app.render('widgets/rss', { entries: entries }, function (err, html) {
+            if (err) {
+                return callback(err);
+            }
+            widget.html = html;
+            callback(null, widget);
+        });
+    });
 };
