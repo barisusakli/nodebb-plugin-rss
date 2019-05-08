@@ -10,10 +10,8 @@
 
         { "hook": "action:plugin.deactivate", "method": "admin.deactivate" },
         { "hook": "action:plugin.uninstall", "method": "admin.uninstall"},
+
         { "hook": "action:topic.purge", "method": "onTopicPurge"},
-        { "hook": "filter:topic.build", "method": "filterTopicBuild" },
-        { "hook": "filter:teasers.get", "method": "filterTeasersGet" },
-        { "hook": "filter:post.getPostSummaryByPids", "method": "filterPostGetPostSummaryByPids" },
 
         { "hook": "filter:widgets.getWidgets", "method": "defineWidgets" },
         { "hook": "filter:widget.render:rss", "method": "renderRssWidget" }

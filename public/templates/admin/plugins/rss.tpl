@@ -9,23 +9,6 @@
 
 	<button class="btn btn-primary" id="save">Save</button>
 
-	<div class="checkbox">
-		<label>
-			<input id="convertToMarkdown" type="checkbox" <!-- IF settings.convertToMarkdown -->checked<!-- ENDIF settings.convertToMarkdown -->> Convert to Markdown
-		</label>
-	</div>
-
-	<div class="checkbox">
-		<label>
-			<input id="useGFM" type="checkbox" <!-- IF settings.useGFM -->checked<!-- ENDIF settings.useGFM -->> Use Github Flavored Markdown
-		</label>
-	</div>
-
-	<div class="checkbox">
-		<label>
-			<input id="collapseWhiteSpace" type="checkbox" <!-- IF settings.collapseWhiteSpace -->checked<!-- ENDIF settings.collapseWhiteSpace -->> Collapse Whitespace
-		</label>
-	</div>
 	<hr/>
 
 	<h4>Test Feeds</h4>
@@ -35,14 +18,6 @@
 	<input id="test-feed-input" type="text" class="form-control" /><br/>
 	<button id="checkFeed" class="btn">Check</button><br/><br/>
 	<pre id="test-result" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap;"></pre>
-	<div id="rendered-content" class="well"></div>
-
-	<div class="hidden">
-		<hr/>
-		<textarea rows="10" id="sampleHTML" class="form-control"></textarea>
-		<button id="parseHTML" class="btn">convert html to markdown</button>
-		<pre id="parsedHTML" style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -pre-wrap; white-space: -o-pre-wrap;"></pre>
-	</div>
 </div>
 
 <input id="csrf_token" type="hidden" value="{csrf}" />
@@ -145,9 +120,7 @@ $(document).ready(function() {
 			_csrf: $('#csrf_token').val(),
 			feeds: feedsToSave,
 			settings: {
-				collapseWhiteSpace: $('#collapseWhiteSpace').prop('checked') ? 1 : 0,
-				convertToMarkdown: $('#convertToMarkdown').prop('checked') ? 1 : 0,
-				useGFM: $('#useGFM').prop('checked') ? 1 : 0,
+
 			}
 		}, function(data) {
 			app.alert({
@@ -197,25 +170,9 @@ $(document).ready(function() {
 		$.get(config.relative_path + '/api/admin/plugins/rss/checkFeed', {
 			url: $('#test-feed-input').val(),
 		}, function(data) {
-			console.log(data);
 			$('#test-result').text(JSON.stringify(data, null, 4));
-			data.forEach(function (entry) {
-				$('#rendered-content').append(entry.entry.rendered);
-			})
-
 		});
 		return false;
 	});
-
-	$('#parseHTML').on('click', function () {
-		$.post(config.relative_path + '/api/admin/plugins/rss/parseHTML', {
-			html: $('#sampleHTML').val(),
-			_csrf: $('#csrf_token').val(),
-		}, function(data) {
-			$('#parsedHTML').html(data);
-		});
-		return false;
-	});
-
 });
 </script>

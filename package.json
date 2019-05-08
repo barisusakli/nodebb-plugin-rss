@@ -15,15 +15,15 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "async": "2.3.0",
-    "cheerio": "1.0.0-rc.2",
     "cron": "~1.0.5",
-    "lodash": "4.17.11",
-    "rss-parser": "^3.7.0",
-    "string": "~3.0.0",
-    "turndown": "5.0.1",
-    "turndown-plugin-gfm": "1.0.2"
+    "lodash": "4.17.11"
   },
   "nbbpm": {
     "compatibility": "^1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "5.15.3",
+    "eslint-config-airbnb-base": "13.1.0",
+    "eslint-plugin-import": "2.16.0"
   }
 }
