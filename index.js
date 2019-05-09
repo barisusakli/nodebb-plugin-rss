@@ -35,7 +35,6 @@ rssPlugin.init = function (params, callback) {
 rssPlugin.onTopicPurge = async function (data) {
 	const feedUrls = await db.async.getSetMembers('nodebb-plugin-rss:feeds');
 	const keys = feedUrls.map(url => 'nodebb-plugin-rss:feed:' + url + ':uuid');
-	console.log(keys, data.topic.tid);
 	await db.async.sortedSetsRemoveRangeByScore(keys, data.topic.tid, data.topic.tid);
 };
 

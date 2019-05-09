@@ -5,11 +5,10 @@ var Parser = require('rss-parser');
 var feed = module.exports;
 
 feed.getItems = async function (feedUrl, entriesToPull) {
-    entriesToPull = parseInt(entriesToPull, 10);
-	entriesToPull = entriesToPull ? entriesToPull : 4;
+	entriesToPull = parseInt(entriesToPull, 10) || 4;
 	feedUrl = feedUrl + '?t=' + Date.now();
 
-	let parser = new Parser();
+	const parser = new Parser();
 	const feed = await parser.parseURL(feedUrl);
 
 	feed.items = feed.items.filter(Boolean).slice(0, entriesToPull);
@@ -66,5 +65,4 @@ feed.checkFeed = async function (req, res) {
 		return entry;
 	});
 	res.json(entries);
-}
-
+};
