@@ -18,9 +18,11 @@ var user = require.main.require('./src/user');
 var plugins = require.main.require('./src/plugins');
 
 const widget = require('./widget');
-const feed = require('./feed');
+const feedAPI = require('./feed');
 
 var rssPlugin = module.exports;
+
+var admin = {};
 
 rssPlugin.defineWidgets = widget.defineWidgets;
 rssPlugin.renderRssWidget = widget.render;
@@ -55,8 +57,7 @@ plugins.isActive('nodebb-plugin-rss', function (err, active) {
 	}
 });
 
-rssPlugin.init = function(params, callback) {
-
+rssPlugin.init = function (params, callback) {
 	widget.init(params.app);
 
 	params.router.get('/admin/plugins/rss', params.middleware.applyCSRF, params.middleware.admin.buildHeader, renderAdmin);
@@ -200,7 +201,7 @@ function checkFeed(req, res) {
 	async.parallel({
 		settings: admin.getSettings,
 		entries: function (next) {
-			feed.getItems(req.query.url, 3, next);
+			feedAPI.getItems(req.query.url, 3, next);
 		},
 	}, function (err, results) {
 		if (err) {
@@ -319,7 +320,7 @@ function pullFeed(feed, settings, callback) {
 		return callback();
 	}
 
-	feed.getItems(feed.url, feed.entriesToPull, function (err, entries) {
+	feedAPI.getItems(feed.url, feed.entriesToPull, function (err, entries) {
 		if (err) {
 			winston.error('[[nodebb-plugin-rss:error]] Error pulling feed ' + feed.url, err.message);
 			return callback();
@@ -535,8 +536,6 @@ function setTimestampToFeedPublishedDate(data, entry) {
 		'cid:' + topicData.cid + ':pids',
 	], timestamp, pid);
 }
-
-var admin = {};
 
 admin.menu = function (custom_header, callback) {
 	custom_header.plugins.push({

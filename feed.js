@@ -4,14 +4,13 @@ var Parser = require('rss-parser');
 
 var feed = module.exports;
 
-feed.getItems = function(feedUrl, entriesToPull, callback) {
-    entriesToPull = parseInt(entriesToPull, 10);
-	entriesToPull = entriesToPull ? entriesToPull : 4;
+feed.getItems = function (feedUrl, entriesToPull, callback) {
+	entriesToPull = parseInt(entriesToPull, 10) || 4;
 	feedUrl = feedUrl + '?t=' + Date.now();
 
-	let parser = new Parser();
-	parser.parseURL(feedUrl, function(err, feed) {
-		if (err)  {
+	const parser = new Parser();
+	parser.parseURL(feedUrl, function (err, feed) {
+		if (err) {
 			return callback(err);
 		}
 		feed.items = feed.items.slice(0, entriesToPull);
