@@ -33,9 +33,9 @@ rssPlugin.init = function (params, callback) {
 };
 
 rssPlugin.onTopicPurge = async function (data) {
-	const feedUrls = await db.async.getSetMembers('nodebb-plugin-rss:feeds');
+	const feedUrls = await db.getSetMembers('nodebb-plugin-rss:feeds');
 	const keys = feedUrls.map(url => 'nodebb-plugin-rss:feed:' + url + ':uuid');
-	await db.async.sortedSetsRemoveRangeByScore(keys, data.topic.tid, data.topic.tid);
+	await db.sortedSetsRemoveRangeByScore(keys, data.topic.tid, data.topic.tid);
 };
 
 async function renderAdmin(req, res, next) {
@@ -93,7 +93,7 @@ function getEntryDate(entry) {
 
 async function isEntryNew(feed, entry) {
 	var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
-	const isMember = await db.async.isSortedSetMember('nodebb-plugin-rss:feed:' + feed.url + ':uuid', uuid);
+	const isMember = await db.isSortedSetMember('nodebb-plugin-rss:feed:' + feed.url + ':uuid', uuid);
 	return !isMember;
 }
 
@@ -114,7 +114,7 @@ async function postEntry(feed, entry) {
 		return;
 	}
 
-	let posterUid = await user.async.getUidByUsername(feed.username);
+	let posterUid = await user.getUidByUsername(feed.username);
 	if (!posterUid) {
 		posterUid = 1;
 	}
@@ -126,13 +126,11 @@ async function postEntry(feed, entry) {
 
 	// use tags from feed if there are any
 	if (Array.isArray(entry.category)) {
-		var entryTags = entry.category.map(function (data) {
-			return data && data.term;
-		}).filter(Boolean);
+		var entryTags = entry.category.map(data => data && data.term).filter(Boolean);
 		tags = tags.concat(entryTags);
 	}
 	winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + getEntryDate(entry));
-	const result = await topics.async.post({
+	const result = await topics.post({
 		uid: posterUid,
 		title: entry.title,
 		content: entry.link && entry.link.href,
@@ -148,7 +146,7 @@ async function postEntry(feed, entry) {
 
 	var max = Math.max(parseInt(meta.config.postDelay, 10) || 10, parseInt(meta.config.newbiePostDelay, 10) || 10) + 1;
 
-	await user.async.setUserField(posterUid, 'lastposttime', Date.now() - (max * 1000));
+	await user.setUserField(posterUid, 'lastposttime', Date.now() - (max * 1000));
 	var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
 	await db.sortedSetAdd('nodebb-plugin-rss:feed:' + feed.url + ':uuid', topicData.tid, uuid);
 }
@@ -186,9 +184,9 @@ admin.menu = function (custom_header, callback) {
 };
 
 admin.getFeeds = async function () {
-	const feedUrls = await db.async.getSetMembers('nodebb-plugin-rss:feeds');
+	const feedUrls = await db.getSetMembers('nodebb-plugin-rss:feeds');
 	const keys = feedUrls.map(url => 'nodebb-plugin-rss:feed:' + url);
-	const results = await db.async.getObjects(keys);
+	const results = await db.getObjects(keys);
 
 	results.forEach(function (feed) {
 		if (feed) {
@@ -207,24 +205,22 @@ async function saveFeeds(feeds) {
 	});
 	async function saveFeed(feed) {
 		await Promise.all([
-			await db.async.setObject('nodebb-plugin-rss:feed:' + feed.url, feed),
-			await db.async.setAdd('nodebb-plugin-rss:feeds', feed.url),
+			await db.setObject('nodebb-plugin-rss:feed:' + feed.url, feed),
+			await db.setAdd('nodebb-plugin-rss:feeds', feed.url),
 		]);
 	}
-	const promises = feeds.map(async function (feed) {
-		await saveFeed(feed);
-	});
+	const promises = feeds.map(feed => saveFeed(feed));
 	await Promise.all(promises);
 }
 
 async function deleteFeeds() {
-	const feeds = await db.async.getSetMembers('nodebb-plugin-rss:feeds');
+	const feeds = await db.getSetMembers('nodebb-plugin-rss:feeds');
 	if (!feeds.length) {
 		return;
 	}
 	const keys = feeds.map(feed => 'nodebb-plugin-rss:feed:' + feed);
-	await db.async.deleteAll(keys);
-	await db.async.setRemove('nodebb-plugin-rss:feeds', feeds);
+	await db.deleteAll(keys);
+	await db.setRemove('nodebb-plugin-rss:feeds', feeds);
 }
 
 admin.deactivate = function (data) {
