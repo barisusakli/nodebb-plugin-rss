@@ -1,18 +1,18 @@
 'use strict';
 
-var winston = require.main.require('winston');
-var meta = require.main.require('./src/meta');
-var pubsub = require.main.require('./src/pubsub');
-var topics = require.main.require('./src/topics');
-var db = require.main.require('./src/database');
-var user = require.main.require('./src/user');
+const winston = require.main.require('winston');
+const meta = require.main.require('./src/meta');
+const pubsub = require.main.require('./src/pubsub');
+const topics = require.main.require('./src/topics');
+const db = require.main.require('./src/database');
+const user = require.main.require('./src/user');
 
 
 const widget = require('./widget');
 const feedAPI = require('./feed');
 const jobs = require('./jobs');
 
-var rssPlugin = module.exports;
+const rssPlugin = module.exports;
 const admin = {};
 rssPlugin.admin = admin;
 
@@ -76,11 +76,14 @@ async function pullFeed(feed) {
 	if (!feed) {
 		return;
 	}
-
-	const entries = await feedAPI.getItems(feed.url, feed.entriesToPull);
-	entries.reverse();
-	for (const entry of entries) {
-		await postEntry(feed, entry);
+	try {
+		const entries = await feedAPI.getItems(feed.url, feed.entriesToPull);
+		entries.reverse();
+		for (const entry of entries) {
+			await postEntry(feed, entry);
+		}
+	} catch (err) {
+		winston.error('[unable to pull feed] ' + feed.url, err);
 	}
 }
 
@@ -92,7 +95,7 @@ function getEntryDate(entry) {
 }
 
 async function isEntryNew(feed, entry) {
-	var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
+	const uuid = entry.id || (entry.link && entry.link.href) || entry.title;
 	const isMember = await db.isSortedSetMember('nodebb-plugin-rss:feed:' + feed.url + ':uuid', uuid);
 	return !isMember;
 }
@@ -119,14 +122,14 @@ async function postEntry(feed, entry) {
 		posterUid = 1;
 	}
 
-	var tags = [];
+	let tags = [];
 	if (feed.tags) {
 		tags = feed.tags.split(',');
 	}
 
 	// use tags from feed if there are any
 	if (Array.isArray(entry.category)) {
-		var entryTags = entry.category.map(data => data && data.term).filter(Boolean);
+		const entryTags = entry.category.map(data => data && data.term).filter(Boolean);
 		tags = tags.concat(entryTags);
 	}
 	winston.info('[plugin-rss] posting, ' + feed.url + ' - title: ' + entry.title + ', published date: ' + getEntryDate(entry));
@@ -138,25 +141,25 @@ async function postEntry(feed, entry) {
 		tags: tags,
 	});
 
-	var topicData = result.topicData;
+	const topicData = result.topicData;
 
 	if (feed.timestamp === 'feed') {
 		setTimestampToFeedPublishedDate(result, entry);
 	}
 
-	var max = Math.max(parseInt(meta.config.postDelay, 10) || 10, parseInt(meta.config.newbiePostDelay, 10) || 10) + 1;
+	const max = Math.max(parseInt(meta.config.postDelay, 10) || 10, parseInt(meta.config.newbiePostDelay, 10) || 10) + 1;
 
 	await user.setUserField(posterUid, 'lastposttime', Date.now() - (max * 1000));
-	var uuid = entry.id || (entry.link && entry.link.href) || entry.title;
+	const uuid = entry.id || (entry.link && entry.link.href) || entry.title;
 	await db.sortedSetAdd('nodebb-plugin-rss:feed:' + feed.url + ':uuid', topicData.tid, uuid);
 }
 
 function setTimestampToFeedPublishedDate(data, entry) {
-	var topicData = data.topicData;
-	var postData = data.postData;
-	var tid = topicData.tid;
-	var pid = postData.pid;
-	var timestamp = new Date(getEntryDate(entry)).getTime();
+	const topicData = data.topicData;
+	const postData = data.postData;
+	const tid = topicData.tid;
+	const pid = postData.pid;
+	const timestamp = new Date(getEntryDate(entry)).getTime();
 
 	db.setObjectField('topic:' + tid, 'timestamp', timestamp);
 	db.sortedSetsAdd([
