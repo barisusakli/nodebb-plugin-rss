@@ -69,6 +69,7 @@ async function pullFeedsInterval(interval) {
 		return;
 	}
 	for	(const feed of feeds) {
+		// eslint-disable-next-line no-await-in-loop
 		await pullFeed(feed);
 	}
 }
@@ -80,6 +81,7 @@ async function pullFeed(feed) {
 		const entries = await feedAPI.getItems(feed.url, feed.entriesToPull);
 		entries.reverse();
 		for (const entry of entries) {
+			// eslint-disable-next-line no-await-in-loop
 			await postEntry(feed, entry);
 		}
 	} catch (err) {

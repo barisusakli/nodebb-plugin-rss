@@ -64,6 +64,8 @@
 		"no-script-url": "off",
 		"default-case": "off",
 		"linebreak-style": "off",
+		"no-multiple-empty-lines": "off",
+		"arrow-parens": "off"
 
 		// "no-multi-assign": "off",
 		// "one-var": "off",
@@ -118,7 +120,6 @@
 		// "comma-spacing": "off",
 		// "no-trailing-spaces": "off",
 		// "key-spacing": "off",
-		// "no-multiple-empty-lines": "off",
 		// "spaced-comment": "off",
 		// "space-in-parens": "off",
 		// "block-spacing": "off",
