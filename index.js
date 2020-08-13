@@ -103,8 +103,8 @@ async function isEntryNew(feed, entry) {
 }
 
 async function postEntry(feed, entry) {
-	if (!entry || (!entry.hasOwnProperty('content') || !entry.content)) {
-		winston.warn('[nodebb-plugin-rss] invalid content for entry,  ' + feed.url);
+	if (!entry || (!entry.hasOwnProperty('link') || !entry.link || !entry.link.href)) {
+		winston.warn('[nodebb-plugin-rss] invalid link for entry,  ' + feed.url);
 		return;
 	}
 

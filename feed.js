@@ -1,8 +1,8 @@
 'use strict';
 
-var Parser = require('rss-parser');
+const Parser = require('rss-parser');
 
-var feed = module.exports;
+const feed = module.exports;
 
 feed.getItems = async function (feedUrl, entriesToPull) {
 	entriesToPull = parseInt(entriesToPull, 10) || 4;
@@ -15,7 +15,6 @@ feed.getItems = async function (feedUrl, entriesToPull) {
 	feed.items = feed.items.map(function (item) {
 		return {
 			title: item.title,
-			content: item.content,
 			published: item.pubDate,
 			link: { href: item.link },
 			id: item.guid || item.id,
@@ -37,13 +36,9 @@ feed.checkFeed = async function (req, res) {
 	}
 
 	entries = entries.map(function (entry) {
-		var entryData = entry || {};
+		const entryData = entry || {};
 		if (!entryData.title || (typeof entryData.title !== 'string' && !entryData.title.content)) {
 			entryData.title = 'ERROR: title is missing';
-		}
-
-		if ((!entryData.content)) {
-			entryData.error = 'ERROR: content is missing!';
 		}
 
 		if (!entryData.published && !entryData.date && !entryData.updated) {
