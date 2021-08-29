@@ -16,5 +16,5 @@
         { "hook": "filter:widgets.getWidgets", "method": "defineWidgets" },
         { "hook": "filter:widget.render:rss", "method": "renderRssWidget" }
     ],
-    "templates": "./public/templates"
+    "templates": "./templates"
 }
