@@ -1,26 +1,26 @@
 'use strict';
 
-var Widget = module.exports;
+const Widget = module.exports;
 
 const feed = require('./feed');
 
-var app;
+let app;
 Widget.init = function (_app) {
 	app = _app;
 };
 
-Widget.defineWidgets = function(widgets, callback) {
-	var widget = {
-		widget: "rss",
-		name: "RSS",
-		description: "RSS entries from a feed",
-		content: 'admin/widget/rss'
+Widget.defineWidgets = function (widgets, callback) {
+	const widget = {
+		widget: 'rss',
+		name: 'RSS',
+		description: 'RSS entries from a feed',
+		content: 'admin/widget/rss',
 	};
 	if (!app) {
 		return setImmediate(callback, null, widgets);
 	}
 
-	app.render(widget.content, {}, function(err, html) {
+	app.render(widget.content, {}, (err, html) => {
 		if (err) {
 			return callback(err);
 		}
@@ -31,9 +31,9 @@ Widget.defineWidgets = function(widgets, callback) {
 };
 
 Widget.render = async function (widget, callback) {
-	let entries = await feed.getItems(widget.data.feedUrl, widget.data.numItems || 4);
+	const entries = await feed.getItems(widget.data.feedUrl, widget.data.numItems || 4);
 
-	app.render('widgets/rss', { entries: entries }, function (err, html) {
+	app.render('widgets/rss', { entries: entries }, (err, html) => {
 		if (err) {
 			return callback(err);
 		}
