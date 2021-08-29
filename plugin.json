@@ -6,15 +6,15 @@
     "library": "./index.js",
     "hooks": [
         { "hook": "static:app.load", "method": "init" },
-        { "hook": "filter:admin.header.build", "method": "admin.menu" },
 
+        { "hook": "filter:admin.header.build", "method": "admin.menu" },
         { "hook": "action:plugin.deactivate", "method": "admin.deactivate" },
         { "hook": "action:plugin.uninstall", "method": "admin.uninstall"},
 
         { "hook": "action:topic.purge", "method": "onTopicPurge"},
 
-        { "hook": "filter:widgets.getWidgets", "method": "defineWidgets" },
-        { "hook": "filter:widget.render:rss", "method": "renderRssWidget" }
+        { "hook": "filter:widgets.getWidgets", "method": "widgets.defineWidgets" },
+        { "hook": "filter:widget.render:rss", "method": "widgets.renderRssWidget" }
     ],
     "templates": "./templates"
 }
