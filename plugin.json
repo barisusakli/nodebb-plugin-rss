@@ -16,5 +16,8 @@
         { "hook": "filter:widgets.getWidgets", "method": "widgets.defineWidgets" },
         { "hook": "filter:widget.render:rss", "method": "widgets.renderRssWidget" }
     ],
-    "templates": "./templates"
+    "templates": "./templates",
+    "acpScripts": [
+        "./public/admin.js"
+    ]
 }
