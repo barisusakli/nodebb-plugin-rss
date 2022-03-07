@@ -17,7 +17,7 @@
         { "hook": "filter:widget.render:rss", "method": "widgets.renderRssWidget" }
     ],
     "templates": "./templates",
-    "acpScripts": [
-        "./public/admin.js"
-    ]
+    "modules": {
+        "../admin/plugins/rss.js": "./public/admin.js"
+    }
 }

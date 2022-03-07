@@ -1,26 +1,26 @@
 'use strict';
 
-$(document).ready(function () {
-	var categories = null;
+define('admin/plugins/rss', [
+	'benchpress', 'bootbox', 'api', 'autocomplete', 'alerts',
+], function (benchpress, bootbox, api, autocomplete, alerts) {
+	const admin = {};
 
-	function addOptionsToAllSelects() {
-		$('.form-control.feed-category').each(function (index, element) {
-			addOptionsToSelect($(element));
-		});
-	}
+	let categories;
 
-	function addOptionsToSelect(select) {
-		for (var i = 0; i < categories.length; ++i) {
-			select.append('<option value=' + categories[i].cid + '>' + categories[i].name + '</option>');
-		}
-	}
-
-	socket.emit('categories.get', function (err, data) {
-		if (err) {
-			console.log(err);
+	admin.init = function () {
+		categories = ajaxify.data.categories;
+		function addOptionsToAllSelects() {
+			$('.form-control.feed-category').each(function (index, element) {
+				addOptionsToSelect($(element));
+			});
 		}
 
-		categories = data;
+		function addOptionsToSelect(select) {
+			for (var i = 0; i < categories.length; ++i) {
+				select.append('<option value=' + categories[i].cid + '>' + categories[i].name + '</option>');
+			}
+		}
+
 		addOptionsToAllSelects();
 
 		$('.feed-interval').each(function (index, element) {
@@ -34,9 +34,7 @@ $(document).ready(function () {
 		$('.feed-topictimestamp').each(function (index, element) {
 			$(element).val($(element).attr('data-topictimestamp'));
 		});
-	});
 
-	require(['benchpress'], function (benchpress) {
 		$('#addFeed').on('click', function () {
 			benchpress.render('partials/feed', {
 				feeds: [{
@@ -56,9 +54,7 @@ $(document).ready(function () {
 			});
 			return false;
 		});
-	});
 
-	require(['bootbox'], function (bootbox) {
 		$('.feeds').on('click', '.remove', function () {
 			var self = $(this);
 			bootbox.confirm('Do you really want to remove this feed?', function (confirm) {
@@ -69,25 +65,21 @@ $(document).ready(function () {
 
 			return false;
 		});
-	});
 
-	function enableAutoComplete(selector) {
-		require(['autocomplete'], function (autocomplete) {
+		function enableAutoComplete(selector) {
 			autocomplete.user(selector);
-		});
-	}
+		}
 
-	function enableTagsInput(selector) {
-		selector.tagsinput({
-			maxTags: config.tagsPerTopic,
-			confirmKeys: [13, 44],
-		});
-	}
+		function enableTagsInput(selector) {
+			selector.tagsinput({
+				maxTags: config.tagsPerTopic,
+				confirmKeys: [13, 44],
+			});
+		}
 
-	enableAutoComplete($('.feeds .feed-user'));
-	enableTagsInput($('.feeds .feed-tags'));
+		autocomplete.user($('.feeds .feed-user'));
+		enableTagsInput($('.feeds .feed-tags'));
 
-	require(['api'], function (api) {
 		$('#save').on('click', function () {
 			var feedsToSave = [];
 
@@ -116,14 +108,9 @@ $(document).ready(function () {
 				settings: {},
 			}, function (err, data) {
 				if (err) {
-					console.log(err);
+					return alerts.error(err);
 				}
-				app.alert({
-					title: 'Success',
-					message: data.message,
-					type: 'success',
-					timeout: 2000,
-				});
+				alerts.success(data.message);
 			});
 			return false;
 		});
@@ -135,11 +122,13 @@ $(document).ready(function () {
 				url: $('#test-feed-input').val(),
 			}, function (err, data) {
 				if (err) {
-					console.log(err);
+					alerts.error(err);
 				}
 				$('#test-result').text(JSON.stringify(data, null, 4));
 			});
 			return false;
 		});
-	});
+	};
+
+	return admin;
 });
