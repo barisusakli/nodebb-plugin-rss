@@ -2,6 +2,7 @@
 
 const db = require.main.require('./src/database');
 const pubsub = require.main.require('./src/pubsub');
+const routeHelpers = require.main.require('./src/routes/helpers');
 
 const database = require('./lib/database');
 const controllers = require('./lib/controllers');
@@ -10,8 +11,7 @@ const jobs = require('./lib/jobs');
 const pull = require('./lib/pull');
 const widget = require('./lib/widget');
 
-
-const RssPlugin = {};
+const RssPlugin = module.exports;
 
 /**
  * Called on `static:app.load`
@@ -19,11 +19,10 @@ const RssPlugin = {};
 RssPlugin.init = async function (params) {
 	widget.init(params.app);
 	jobs.init(pullFeedsInterval);
+	const { router, middleware } = params;
+	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/rss', [middleware.applyCSRF], controllers.renderAdmin);
 
-	params.router.get('/admin/plugins/rss', params.middleware.applyCSRF, params.middleware.admin.buildHeader, controllers.renderAdmin);
-	params.router.get('/api/admin/plugins/rss', params.middleware.applyCSRF, controllers.renderAdmin);
-
-	params.router.post('/api/admin/plugins/rss/save', params.middleware.applyCSRF, controllers.save);
+	params.router.post('/api/admin/plugins/rss/save', middleware.applyCSRF, controllers.save);
 	params.router.get('/api/admin/plugins/rss/checkFeed', feedAPI.checkFeed);
 };
 
@@ -97,5 +96,3 @@ RssPlugin.widgets.defineWidgets = widget.defineWidgets;
  */
 RssPlugin.widgets.renderRssWidget = widget.render;
 
-
-module.exports = RssPlugin;

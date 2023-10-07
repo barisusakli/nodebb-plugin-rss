@@ -72,6 +72,7 @@ define('admin/plugins/rss', [
 
 		function enableTagsInput(selector) {
 			selector.tagsinput({
+				tagClass: 'badge bg-info',
 				maxTags: config.tagsPerTopic,
 				confirmKeys: [13, 44],
 			});
