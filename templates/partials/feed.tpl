@@ -1,5 +1,5 @@
 {{{ each feeds }}}
-<div class="feed well border-bottom pb-3 my-3">
+<div class="feed border-bottom pb-3 my-3">
 	<div class="mb-3">
 		<label class="form-label">Feed URL</label>
 		<input type="text" class="form-control feed-url" placeholder="Enter the RSS feed URL" value="{feeds.url}">
