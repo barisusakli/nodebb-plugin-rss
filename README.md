@@ -10,7 +10,7 @@ To customize options for the parser, please consult the "RSS" page in the admini
 
 ## Usage
 
-![baa720fc-1b00-440e-bee0-feb439302ade-image.png](https://i.imgur.com/oiIHYGB.png) 
+![Screenshot of the user interface of the NodeBB RSS Parser plugin](screenshot.png) 
 
 1. Click 'Add Feed'
 2. Enter the RSS feed you want to pull
