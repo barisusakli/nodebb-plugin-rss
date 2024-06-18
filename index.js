@@ -3,6 +3,7 @@
 const db = require.main.require('./src/database');
 const pubsub = require.main.require('./src/pubsub');
 const routeHelpers = require.main.require('./src/routes/helpers');
+const utils = require.main.require('./src/utils');
 
 const database = require('./lib/database');
 const controllers = require('./lib/controllers');
@@ -96,3 +97,17 @@ RssPlugin.widgets.defineWidgets = widget.defineWidgets;
  */
 RssPlugin.widgets.renderRssWidget = widget.render;
 
+RssPlugin.skipMarkdown = async ({ env, data }) => {
+	const feedUrls = await db.getSetMembers('nodebb-plugin-rss:feeds');
+	const keys = feedUrls.map(url => `nodebb-plugin-rss:feed:${url}:uuid`);
+	const { tid } = data.postData;
+
+	if (utils.isNumber(tid)) {
+		const entries = await db.getSortedSetRangeByScore(keys, 0, 1, tid, tid);
+		if (entries.length) {
+			env.parse = false;
+		}
+	}
+
+	return { env, data };
+};
