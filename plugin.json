@@ -14,7 +14,9 @@
         { "hook": "action:topic.purge", "method": "onTopicPurge"},
 
         { "hook": "filter:widgets.getWidgets", "method": "widgets.defineWidgets" },
-        { "hook": "filter:widget.render:rss", "method": "widgets.renderRssWidget" }
+        { "hook": "filter:widget.render:rss", "method": "widgets.renderRssWidget" },
+
+        { "hook": "filter:markdown.beforeParse", "method": "skipMarkdown" }
     ],
     "templates": "./templates",
     "modules": {
