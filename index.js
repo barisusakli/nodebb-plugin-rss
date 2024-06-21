@@ -96,18 +96,3 @@ RssPlugin.widgets.defineWidgets = widget.defineWidgets;
  * Called on `filter:widget.render:rss`
  */
 RssPlugin.widgets.renderRssWidget = widget.render;
-
-RssPlugin.skipMarkdown = async ({ env, data }) => {
-	const feedUrls = await db.getSetMembers('nodebb-plugin-rss:feeds');
-	const keys = feedUrls.map(url => `nodebb-plugin-rss:feed:${url}:uuid`);
-	const { tid } = data.postData;
-
-	if (utils.isNumber(tid)) {
-		const entries = await db.getSortedSetRangeByScore(keys, 0, 1, tid, tid);
-		if (entries.length) {
-			env.parse = false;
-		}
-	}
-
-	return { env, data };
-};
