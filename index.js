@@ -3,6 +3,7 @@
 const db = require.main.require('./src/database');
 const pubsub = require.main.require('./src/pubsub');
 const routeHelpers = require.main.require('./src/routes/helpers');
+const utils = require.main.require('./src/utils');
 
 const database = require('./lib/database');
 const controllers = require('./lib/controllers');
@@ -95,4 +96,3 @@ RssPlugin.widgets.defineWidgets = widget.defineWidgets;
  * Called on `filter:widget.render:rss`
  */
 RssPlugin.widgets.renderRssWidget = widget.render;
-
