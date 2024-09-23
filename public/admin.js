@@ -1,34 +1,27 @@
 'use strict';
 
 define('admin/plugins/rss', [
-	'benchpress', 'bootbox', 'api', 'autocomplete', 'alerts',
-], function (benchpress, bootbox, api, autocomplete, alerts) {
+	'bootbox', 'api', 'autocomplete', 'alerts', 'categorySelector',
+], function (bootbox, api, autocomplete, alerts, categorySelector) {
 	const admin = {};
-
-	let categories;
-
 	admin.init = function () {
-		categories = ajaxify.data.categories;
-		function addOptionsToAllSelects() {
-			$('.form-control.feed-category').each(function (index, element) {
-				addOptionsToSelect($(element));
-			});
-		}
-
-		function addOptionsToSelect(select) {
-			for (var i = 0; i < categories.length; ++i) {
-				select.append('<option value=' + categories[i].cid + '>' + categories[i].name + '</option>');
-			}
-		}
-
-		addOptionsToAllSelects();
-
 		$('.feed-interval').each(function (index, element) {
 			$(element).val($(element).attr('data-interval'));
 		});
 
+		const feeds = ajaxify.data.feeds;
+
 		$('.feed-category').each(function (index, element) {
-			$(element).val($(element).attr('data-category'));
+			const $element = $(element);
+			categorySelector.init($element.parent().find('[component="category-selector"]'), {
+				parentCid: 0,
+				selectedCategory: feeds[index].categoryData,
+				template: 'admin/partials/category/selector-dropdown-left',
+				onSelect: function (selectedCategory) {
+					$element.val(selectedCategory.cid);
+				},
+				localCategories: [],
+			});
 		});
 
 		$('.feed-topictimestamp').each(function (index, element) {
@@ -36,7 +29,7 @@ define('admin/plugins/rss', [
 		});
 
 		$('#addFeed').on('click', function () {
-			benchpress.render('partials/feed', {
+			app.parseAndTranslate('partials/feed', {
 				feeds: [{
 					url: '',
 					category: '',
@@ -47,10 +40,17 @@ define('admin/plugins/rss', [
 					entriesToPull: 4,
 				}],
 			}).then(function (html) {
-				var newFeed = $(html).appendTo('.feeds');
+				var newFeed = html.appendTo('.feeds');
 				enableAutoComplete(newFeed.find('.feed-user'));
 				enableTagsInput(newFeed.find('.feed-tags'));
-				addOptionsToSelect(newFeed.find('.feed-category'));
+				categorySelector.init(newFeed.find('[component="category-selector"]'), {
+					parentCid: 0,
+					template: 'admin/partials/category/selector-dropdown-left',
+					onSelect: function (selectedCategory) {
+						newFeed.find('.feed-category').val(selectedCategory.cid);
+					},
+					localCategories: [],
+				});
 			});
 			return false;
 		});
