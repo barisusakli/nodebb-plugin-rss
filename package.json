@@ -4,7 +4,8 @@
   "description": "A RSS Plugin to pull feeds and post them in to categories",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ."
   },
   "keywords": [
     "nodebb",
@@ -19,11 +20,10 @@
     "rss-parser": "^3.12.0"
   },
   "nbbpm": {
-    "compatibility": "^3.2.0"
+    "compatibility": "^3.2.0 || ^4.x"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
-    "eslint-config-nodebb": "^0.0.2",
-    "eslint-plugin-import": "^2.24.2"
+    "eslint": "9.29.0",
+    "eslint-config-nodebb": "^1.1.4"
   }
 }
