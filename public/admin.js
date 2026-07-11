@@ -1,8 +1,8 @@
 'use strict';
 
 define('admin/plugins/rss', [
-	'bootbox', 'api', 'autocomplete', 'alerts', 'categorySelector',
-], function (bootbox, api, autocomplete, alerts, categorySelector) {
+	'modals', 'api', 'autocomplete', 'alerts', 'categorySelector',
+], function (modals, api, autocomplete, alerts, categorySelector) {
 	const admin = {};
 	admin.init = function () {
 		$('.feed-interval').each(function (index, element) {
@@ -40,7 +40,7 @@ define('admin/plugins/rss', [
 					entriesToPull: 4,
 				}],
 			}).then(function (html) {
-				var newFeed = html.appendTo('.feeds');
+				const newFeed = html.appendTo('.feeds');
 				enableAutoComplete(newFeed.find('.feed-user'));
 				enableTagsInput(newFeed.find('.feed-tags'));
 				categorySelector.init(newFeed.find('[component="category-selector"]'), {
@@ -56,8 +56,8 @@ define('admin/plugins/rss', [
 		});
 
 		$('.feeds').on('click', '.remove', function () {
-			var self = $(this);
-			bootbox.confirm('Do you really want to remove this feed?', function (confirm) {
+			const self = $(this);
+			modals.confirm('Do you really want to remove this feed?', function (confirm) {
 				if (confirm) {
 					self.parents('.feed').remove();
 				}
@@ -82,12 +82,12 @@ define('admin/plugins/rss', [
 		enableTagsInput($('.feeds .feed-tags'));
 
 		$('#save').on('click', function () {
-			var feedsToSave = [];
+			const feedsToSave = [];
 
 			$('.feed').each(function (index, child) {
 				child = $(child);
 
-				var feed = {
+				const feed = {
 					url: child.find('.feed-url').val(),
 					category: child.find('.feed-category').val(),
 					interval: child.find('.feed-interval').val(),

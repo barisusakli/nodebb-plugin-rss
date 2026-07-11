@@ -9,9 +9,7 @@
 			</div>
 
 			<button class="btn btn-sm btn-success" id="addFeed">Add Feed</button>
-<!--
-			<button class="btn btn-sm btn-primary" id="save">Save</button>
-			-->
+
 			<hr/>
 
 			<h4>Test Feeds</h4>

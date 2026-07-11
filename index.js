@@ -1,8 +1,8 @@
 'use strict';
 
-const db = require.main.require('./src/database');
-const pubsub = require.main.require('./src/pubsub');
-const routeHelpers = require.main.require('./src/routes/helpers');
+const db = nodebb.require('./src/database');
+const pubsub = nodebb.require('./src/pubsub');
+const routeHelpers = nodebb.require('./src/routes/helpers');
 
 const database = require('./lib/database');
 const controllers = require('./lib/controllers');
